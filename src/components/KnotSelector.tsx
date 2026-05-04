@@ -1,21 +1,16 @@
-"use client";
+const KNOT_TYPES = ["동심결 매듭", "매화 매듭"] as const
 
 type KnotSelectorProps = {
-  selectedKnot: string;
-  onSelect: (knot: "동심결 매듭" | "매화 매듭") => void;
-};
+  selectedKnot: string
+  onSelect: (knotType: (typeof KNOT_TYPES)[number]) => void
+}
 
-// 작업자가 큰 버튼으로 매듭 종류를 고를 수 있는 선택 컴포넌트입니다.
-export default function KnotSelector({
-  selectedKnot,
-  onSelect,
-}: KnotSelectorProps) {
-  const knotTypes = ["동심결 매듭", "매화 매듭"] as const;
-
+// 검사할 매듭 종류를 큰 버튼으로 선택하는 컴포넌트입니다.
+export default function KnotSelector({ selectedKnot, onSelect }: KnotSelectorProps) {
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
-      {knotTypes.map((knotType) => {
-        const isSelected = selectedKnot === knotType;
+    <div className="grid gap-4 md:grid-cols-2">
+      {KNOT_TYPES.map((knotType) => {
+        const isSelected = selectedKnot === knotType
 
         return (
           <button
@@ -24,14 +19,14 @@ export default function KnotSelector({
             onClick={() => onSelect(knotType)}
             className={`min-h-16 rounded-2xl border-2 px-6 py-5 text-xl font-bold transition ${
               isSelected
-                ? "border-sky-600 bg-sky-600 text-white shadow-panel"
-                : "border-slate-200 bg-white text-slate-700 hover:border-sky-400"
+                ? "border-slate-900 bg-slate-900 text-white"
+                : "border-slate-300 bg-white text-slate-900 hover:border-slate-500"
             }`}
           >
             {knotType}
           </button>
-        );
+        )
       })}
     </div>
-  );
+  )
 }

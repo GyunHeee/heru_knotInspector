@@ -1,8 +1,8 @@
 export type KnotResult = {
-  result: "PASS" | "FAIL";
-  accuracy: number;
-  reason: string | null;
-};
+  result: "PASS" | "FAIL"
+  accuracy: number
+  reason: string | null
+}
 
 const KNOT_RESULTS: Record<string, KnotResult[]> = {
   "동심결 매듭": [
@@ -18,20 +18,20 @@ const KNOT_RESULTS: Record<string, KnotResult[]> = {
     { result: "PASS", accuracy: 92, reason: null },
     { result: "FAIL", accuracy: 84, reason: "꽃잎 간격 불균형" },
     { result: "FAIL", accuracy: 87, reason: "전체 크기 기준 초과" },
-    { result: "FAIL", accuracy: 83, reason: "꽃잎 수 부족 (4개 → 필요 5개)" },
+    { result: "FAIL", accuracy: 83, reason: "꽃잎 수 부족 (4개 -> 필요 5개)" },
   ],
-};
+}
 
 export function analyzeKnot(knotType: string): KnotResult {
-  const pool = KNOT_RESULTS[knotType];
+  const pool = KNOT_RESULTS[knotType]
 
   if (!pool || pool.length === 0) {
     return {
       result: "FAIL",
       accuracy: 0,
-      reason: "알 수 없는 매듭 종류",
-    };
+      reason: "지원되지 않는 매듭 종류입니다.",
+    }
   }
 
-  return pool[Math.floor(Math.random() * pool.length)];
+  return pool[Math.floor(Math.random() * pool.length)]
 }
