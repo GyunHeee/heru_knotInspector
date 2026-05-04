@@ -138,14 +138,14 @@ export default function HomePage() {
   }
 
   return (
-    <main className="min-h-screen px-4 py-8 md:px-8 md:py-10">
-      <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-4xl flex-col rounded-[2rem] bg-white/90 p-6 shadow-xl ring-1 ring-slate-200 md:p-10">
+    <main className="min-h-screen px-3 py-3 sm:px-4 sm:py-4 md:px-6 md:py-6">
+      <div className="mx-auto flex min-h-[calc(100vh-1.5rem)] w-full max-w-5xl flex-col rounded-[1.75rem] bg-white/90 p-4 shadow-xl ring-1 ring-slate-200 sm:min-h-[calc(100vh-2rem)] sm:p-5 md:rounded-[2rem] md:p-8 lg:min-h-[calc(100vh-3rem)] lg:p-10">
         {isResultView && result ? (
-          <section className="flex flex-1 flex-col items-center justify-center gap-8 text-center">
+          <section className="flex flex-1 flex-col items-center justify-center gap-6 py-3 text-center sm:gap-8">
             <div
               className={`leading-none font-black ${
                 result.result === "PASS" ? "text-pass" : "text-fail"
-              } text-[180px] md:text-[220px]`}
+              } text-[140px] sm:text-[180px] md:text-[220px]`}
             >
               {result.result === "PASS" ? "O" : "X"}
             </div>
@@ -155,26 +155,26 @@ export default function HomePage() {
             <button
               type="button"
               onClick={handleReset}
-              className="min-h-16 rounded-2xl bg-slate-900 px-8 py-4 text-xl font-bold text-white transition hover:bg-slate-700"
+              className="min-h-16 w-full max-w-sm rounded-2xl bg-slate-900 px-8 py-4 text-xl font-bold text-white transition hover:bg-slate-700"
             >
               다시 검사
             </button>
           </section>
         ) : (
-          <section className="flex flex-1 flex-col gap-8">
+          <section className="flex flex-1 flex-col gap-5 md:gap-7">
             <header className="space-y-3">
-              <p className="text-lg font-semibold text-slate-500">매듭 품질 검사 데모</p>
-              <h1 className="text-3xl font-black tracking-tight text-slate-900 md:text-4xl">
+              <p className="text-base font-semibold text-slate-500 sm:text-lg">매듭 품질 검사 데모</p>
+              <h1 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl md:text-4xl">
                 작업 전 매듭 상태를 빠르게 확인하세요
               </h1>
             </header>
 
             <label className="space-y-3">
-              <span className="block text-xl font-bold text-slate-800">작업자 이름</span>
+              <span className="block text-lg font-bold text-slate-800 sm:text-xl">작업자 이름</span>
               <select
                 value={worker}
                 onChange={(event) => setWorker(event.target.value)}
-                className="min-h-16 w-full rounded-2xl border border-slate-300 bg-white px-5 py-4 text-xl text-slate-900 outline-none transition focus:border-slate-900"
+                className="min-h-16 w-full rounded-2xl border border-slate-300 bg-white px-5 py-4 text-lg text-slate-900 outline-none transition focus:border-slate-900 sm:text-xl"
               >
                 <option value="">작업자를 선택하세요</option>
                 {WORKERS.map((name) => (
@@ -186,7 +186,7 @@ export default function HomePage() {
             </label>
 
             <div className="space-y-3">
-              <h2 className="text-xl font-bold text-slate-800">매듭 종류</h2>
+              <h2 className="text-lg font-bold text-slate-800 sm:text-xl">매듭 종류</h2>
               <KnotSelector selectedKnot={selectedKnot} onSelect={setSelectedKnot} />
             </div>
 
@@ -196,10 +196,10 @@ export default function HomePage() {
                   <img
                     src={capturedImage}
                     alt="촬영된 매듭 사진"
-                    className="h-[320px] w-full object-cover md:h-[420px]"
+                    className="h-[260px] w-full object-cover sm:h-[320px] md:h-[420px]"
                   />
                 ) : (
-                  <div className="relative h-[320px] md:h-[420px]">
+                  <div className="relative h-[260px] sm:h-[320px] md:h-[420px]">
                     <video ref={videoRef} muted playsInline className="h-full w-full object-cover" />
                     {!isCameraReady ? (
                       <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-slate-900/75 px-6 text-center text-white">
@@ -224,7 +224,7 @@ export default function HomePage() {
 
               <canvas ref={canvasRef} className="hidden" />
 
-              <div className="flex flex-col gap-3 md:flex-row">
+              <div className="grid gap-3 lg:grid-cols-2">
                 {capturedImage ? (
                   <button
                     type="button"
@@ -262,25 +262,27 @@ export default function HomePage() {
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={handleInspect}
-              disabled={!canStart}
-              className="flex min-h-16 items-center justify-center gap-3 rounded-2xl bg-slate-900 px-8 py-4 text-xl font-bold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500"
-            >
-              {isLoading ? (
-                <>
-                  <span className="h-7 w-7 animate-spin rounded-full border-4 border-white/40 border-t-white" />
-                  검사 중...
-                </>
-              ) : (
-                "검사 시작"
-              )}
-            </button>
+            <div className="sticky bottom-0 -mx-4 mt-auto border-t border-slate-200 bg-white/95 px-4 pb-1 pt-4 backdrop-blur sm:-mx-5 sm:px-5 md:static md:mx-0 md:border-t-0 md:bg-transparent md:px-0 md:pb-0 md:pt-0">
+              <button
+                type="button"
+                onClick={handleInspect}
+                disabled={!canStart}
+                className="flex min-h-16 w-full items-center justify-center gap-3 rounded-2xl bg-slate-900 px-8 py-4 text-xl font-bold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500"
+              >
+                {isLoading ? (
+                  <>
+                    <span className="h-7 w-7 animate-spin rounded-full border-4 border-white/40 border-t-white" />
+                    검사 중...
+                  </>
+                ) : (
+                  "검사 시작"
+                )}
+              </button>
+            </div>
           </section>
         )}
 
-        <div className="mt-6 flex justify-end">
+        <div className="mt-4 flex justify-end sm:mt-6">
           <Link href="/admin" className="text-base font-semibold text-slate-500 underline-offset-4 hover:underline">
             관리자
           </Link>
