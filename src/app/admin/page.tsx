@@ -1,65 +1,49 @@
-import Link from "next/link";
-import HistoryTable from "@/components/HistoryTable";
-import { MOCK_HISTORY } from "@/lib/mockHistory";
+import Link from "next/link"
+import HistoryTable from "@/components/HistoryTable"
+import { getHistorySummary, MOCK_HISTORY } from "@/lib/mockHistory"
 
-function getSummary() {
-  const totalCount = MOCK_HISTORY.length;
-  const passCount = MOCK_HISTORY.filter((item) => item.result === "PASS").length;
-  const averageAccuracy =
-    MOCK_HISTORY.reduce((sum, item) => sum + item.accuracy, 0) / totalCount;
-
-  return {
-    totalCount,
-    passRate: Math.round((passCount / totalCount) * 100),
-    averageAccuracy: Math.round(averageAccuracy),
-  };
-}
-
-// 관리자에게 일별 요약과 최근 검사 이력을 보여주는 화면입니다.
 export default function AdminPage() {
-  const summary = getSummary();
+  const summary = getHistorySummary(MOCK_HISTORY)
 
   return (
-    <main className="min-h-screen px-4 py-6 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-6xl rounded-[2rem] bg-white/85 p-5 shadow-panel backdrop-blur sm:p-8">
-        <div className="mb-8 flex items-start justify-between gap-4">
+    <main className="min-h-screen bg-slate-50 px-4 py-5 sm:px-5 sm:py-6 md:px-8 md:py-10">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 md:gap-8">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-base font-semibold text-sky-700">관리자 대시보드</p>
-            <h1 className="mt-2 text-3xl font-extrabold text-slate-900 sm:text-4xl">
-              오늘 검사 현황
-            </h1>
+            <p className="text-lg font-semibold text-slate-500">관리자 화면</p>
+            <h1 className="text-3xl font-black text-slate-900 md:text-4xl">오늘의 검사 현황</h1>
           </div>
           <Link
             href="/"
-            className="rounded-full px-3 py-2 text-sm font-semibold text-slate-500 underline-offset-4 hover:text-slate-800 hover:underline"
+            className="inline-flex min-h-14 items-center justify-center rounded-2xl border border-slate-300 bg-white px-5 py-3 text-base font-bold text-slate-700 transition hover:border-slate-500 sm:self-start"
           >
-            검사 화면
+            검사 화면으로
           </Link>
         </div>
 
-        <section className="mb-8 grid gap-4 md:grid-cols-3">
-          <div className="rounded-3xl bg-slate-900 p-6 text-white shadow-panel">
-            <p className="text-base font-semibold text-slate-300">오늘 총 검사 수</p>
-            <p className="mt-3 text-4xl font-black">{summary.totalCount}건</p>
-          </div>
-          <div className="rounded-3xl bg-success p-6 text-white shadow-panel">
-            <p className="text-base font-semibold text-green-100">합격률</p>
-            <p className="mt-3 text-4xl font-black">{summary.passRate}%</p>
-          </div>
-          <div className="rounded-3xl bg-sky-600 p-6 text-white shadow-panel">
-            <p className="text-base font-semibold text-sky-100">평균 정확도</p>
-            <p className="mt-3 text-4xl font-black">{summary.averageAccuracy}%</p>
-          </div>
+        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <article className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200 md:p-6">
+            <p className="text-lg font-semibold text-slate-500">오늘 총 검사 수</p>
+            <p className="mt-3 text-4xl font-black text-slate-900">{summary.totalCount}건</p>
+          </article>
+          <article className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200 md:p-6">
+            <p className="text-lg font-semibold text-slate-500">합격률</p>
+            <p className="mt-3 text-4xl font-black text-pass">{summary.passRate}%</p>
+          </article>
+          <article className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200 md:p-6 sm:col-span-2 xl:col-span-1">
+            <p className="text-lg font-semibold text-slate-500">평균 정확도</p>
+            <p className="mt-3 text-4xl font-black text-slate-900">{summary.averageAccuracy}%</p>
+          </article>
         </section>
 
         <section className="space-y-4">
           <div>
-            <h2 className="text-2xl font-extrabold text-slate-900">최근 검사 이력</h2>
-            <p className="mt-1 text-base text-slate-500">최근 10건의 검사 결과입니다.</p>
+            <h2 className="text-2xl font-black text-slate-900">최근 검사 이력</h2>
+            <p className="text-lg text-slate-500">오늘 진행된 최근 10건의 검사 결과입니다.</p>
           </div>
-          <HistoryTable items={MOCK_HISTORY} />
+          <HistoryTable history={MOCK_HISTORY} />
         </section>
       </div>
     </main>
-  );
+  )
 }

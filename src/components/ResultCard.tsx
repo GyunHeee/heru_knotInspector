@@ -1,36 +1,36 @@
-import type { KnotResult } from "@/lib/mockAnalyzer";
-import AccuracyBar from "./AccuracyBar";
+import AccuracyBar from "@/components/AccuracyBar"
+import type { KnotResult } from "@/lib/mockAnalyzer"
 
 type ResultCardProps = {
-  knotType: string;
-  resultData: KnotResult;
-};
+  knotType: string
+  result: KnotResult
+}
 
-// 검사 결과의 핵심 정보를 카드 형태로 정리해 보여주는 컴포넌트입니다.
-export default function ResultCard({ knotType, resultData }: ResultCardProps) {
-  const isPass = resultData.result === "PASS";
+// 매듭 판정 결과와 세부 정보를 카드로 정리해 주는 컴포넌트입니다.
+export default function ResultCard({ knotType, result }: ResultCardProps) {
+  const isPass = result.result === "PASS"
 
   return (
-    <div className="w-full rounded-3xl bg-white p-6 shadow-panel sm:p-8">
-      <div className="grid gap-5 text-lg text-slate-800">
-        <div className="flex items-center justify-between gap-4 border-b border-slate-100 pb-4">
+    <section className="w-full rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+      <div className="space-y-4 text-lg text-slate-800">
+        <div className="flex flex-col gap-2 border-b border-slate-100 pb-4 sm:flex-row sm:items-center sm:justify-between">
           <span className="font-semibold text-slate-500">매듭 종류</span>
           <span className="text-right font-bold">{knotType}</span>
         </div>
-        <div className="flex items-center justify-between gap-4 border-b border-slate-100 pb-4">
+        <div className="flex flex-col gap-2 border-b border-slate-100 pb-4 sm:flex-row sm:items-center sm:justify-between">
           <span className="font-semibold text-slate-500">판정 결과</span>
-          <span className={isPass ? "font-extrabold text-success" : "font-extrabold text-danger"}>
+          <span className={isPass ? "font-bold text-pass" : "font-bold text-fail"}>
             {isPass ? "합격" : "불합격"}
           </span>
         </div>
-        {!isPass && resultData.reason ? (
-          <div className="flex items-start justify-between gap-4 border-b border-slate-100 pb-4">
-            <span className="shrink-0 font-semibold text-slate-500">불량 이유</span>
-            <span className="text-right font-bold text-danger">{resultData.reason}</span>
+        {!isPass && result.reason ? (
+          <div className="border-b border-slate-100 pb-4">
+            <p className="mb-2 font-semibold text-slate-500">불량 이유</p>
+            <p className="font-bold text-slate-900">{result.reason}</p>
           </div>
         ) : null}
-        <AccuracyBar accuracy={resultData.accuracy} result={resultData.result} />
+        <AccuracyBar accuracy={result.accuracy} />
       </div>
-    </div>
-  );
+    </section>
+  )
 }
