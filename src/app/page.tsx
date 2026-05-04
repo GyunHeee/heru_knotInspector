@@ -6,7 +6,16 @@ import KnotSelector from "@/components/KnotSelector"
 import ResultCard from "@/components/ResultCard"
 import { analyzeKnot, type KnotResult } from "@/lib/mockAnalyzer"
 
-const WORKERS = ["홍길동", "김순자", "박영희", "이철수"] as const
+const WORKERS = [
+  "오세철",
+  "김상희",
+  "김경희",
+  "최복술",
+  "김경애",
+  "양인애",
+  "이금자",
+  "김영숙",
+] as const
 
 // 작업자가 실제 카메라로 사진을 촬영하고 검사 결과를 확인하는 메인 화면입니다.
 export default function HomePage() {
