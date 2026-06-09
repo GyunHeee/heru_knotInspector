@@ -5,17 +5,7 @@ import { useEffect, useRef, useState } from "react"
 import KnotSelector from "@/components/KnotSelector"
 import ResultCard from "@/components/ResultCard"
 import { analyzeKnot, type KnotResult } from "@/lib/mockAnalyzer"
-
-const WORKERS = [
-  "오세철",
-  "김상희",
-  "김경희",
-  "최복술",
-  "김경애",
-  "양인애",
-  "이금자",
-  "김영숙",
-] as const
+import { WORKERS } from "@/lib/workers"
 
 // 작업자가 실제 카메라로 사진을 촬영하고 검사 결과를 확인하는 메인 화면입니다.
 export default function HomePage() {
@@ -177,9 +167,9 @@ export default function HomePage() {
                 className="min-h-16 w-full rounded-2xl border border-slate-300 bg-white px-5 py-4 text-lg text-slate-900 outline-none transition focus:border-slate-900 sm:text-xl"
               >
                 <option value="">작업자를 선택하세요</option>
-                {WORKERS.map((name) => (
-                  <option key={name} value={name}>
-                    {name}
+                {WORKERS.map((workerOption) => (
+                  <option key={workerOption.id} value={workerOption.name}>
+                    {workerOption.name}
                   </option>
                 ))}
               </select>
@@ -282,7 +272,10 @@ export default function HomePage() {
           </section>
         )}
 
-        <div className="mt-4 flex justify-end sm:mt-6">
+        <div className="mt-4 flex flex-wrap justify-end gap-4 sm:mt-6">
+          <Link href="/attendance" className="text-base font-semibold text-slate-500 underline-offset-4 hover:underline">
+            출퇴근 기록
+          </Link>
           <Link href="/admin" className="text-base font-semibold text-slate-500 underline-offset-4 hover:underline">
             관리자
           </Link>
