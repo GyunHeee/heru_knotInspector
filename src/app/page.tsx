@@ -2,14 +2,16 @@
 
 import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
+import DailyGoalProgressBar from "@/components/DailyGoalProgressBar"
 import KnotSelector from "@/components/KnotSelector"
 import ResultCard from "@/components/ResultCard"
+import type { DailyGoalProgress } from "@/lib/dailyGoalsShared"
 import { analyzeKnot, type KnotResult } from "@/lib/mockAnalyzer"
-import { WORKERS } from "@/lib/workers"
+import { getWorkerById, WORKERS } from "@/lib/workers"
 
 // 작업자가 실제 카메라로 사진을 촬영하고 검사 결과를 확인하는 메인 화면입니다.
 export default function HomePage() {
-  const [worker, setWorker] = useState("")
+  const [workerId, setWorkerId] = useState("")
   const [selectedKnot, setSelectedKnot] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [result, setResult] = useState<KnotResult | null>(null)
@@ -17,11 +19,17 @@ export default function HomePage() {
   const [isCameraReady, setIsCameraReady] = useState(false)
   const [isCameraStarting, setIsCameraStarting] = useState(false)
   const [cameraError, setCameraError] = useState<string | null>(null)
+  const [goal, setGoal] = useState<DailyGoalProgress | null>(null)
+  const [goalError, setGoalError] = useState<string | null>(null)
+  const [isGoalLoading, setIsGoalLoading] = useState(false)
+  const [showCelebration, setShowCelebration] = useState(false)
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
+  const celebrationTimeoutRef = useRef<number | null>(null)
 
-  const canStart = worker !== "" && selectedKnot !== "" && capturedImage !== null && !isLoading
+  const selectedWorker = getWorkerById(workerId)
+  const canStart = workerId !== "" && selectedKnot !== "" && capturedImage !== null && !isLoading
   const isResultView = result !== null
 
   useEffect(() => {
@@ -29,8 +37,71 @@ export default function HomePage() {
 
     return () => {
       stopCamera()
+
+      if (celebrationTimeoutRef.current) {
+        window.clearTimeout(celebrationTimeoutRef.current)
+      }
     }
   }, [])
+
+  useEffect(() => {
+    if (workerId === "") {
+      setGoal(null)
+      setGoalError(null)
+      return
+    }
+
+    let ignore = false
+
+    const loadGoal = async () => {
+      setIsGoalLoading(true)
+      setGoalError(null)
+
+      try {
+        const response = await fetch(`/api/goals/${workerId}`, { cache: "no-store" })
+        const payload = (await response.json()) as { error?: string; goal?: DailyGoalProgress }
+
+        if (!response.ok || !payload.goal) {
+          throw new Error(payload.error ?? "목표 정보를 불러오지 못했습니다.")
+        }
+
+        if (!ignore) {
+          setGoal(payload.goal)
+        }
+      } catch (loadError) {
+        if (!ignore) {
+          setGoal(null)
+          setGoalError(loadError instanceof Error ? loadError.message : "목표 정보를 불러오지 못했습니다.")
+        }
+      } finally {
+        if (!ignore) {
+          setIsGoalLoading(false)
+        }
+      }
+    }
+
+    void loadGoal()
+
+    return () => {
+      ignore = true
+    }
+  }, [workerId])
+
+  useEffect(() => {
+    if (!showCelebration) {
+      return
+    }
+
+    celebrationTimeoutRef.current = window.setTimeout(() => {
+      setShowCelebration(false)
+    }, 2600)
+
+    return () => {
+      if (celebrationTimeoutRef.current) {
+        window.clearTimeout(celebrationTimeoutRef.current)
+      }
+    }
+  }, [showCelebration])
 
   const stopCamera = () => {
     streamRef.current?.getTracks().forEach((track) => track.stop())
@@ -114,21 +185,69 @@ export default function HomePage() {
     }
 
     setIsLoading(true)
+    setGoalError(null)
 
     window.setTimeout(() => {
-      setResult(analyzeKnot(selectedKnot))
-      setIsLoading(false)
+      void (async () => {
+        const inspectedResult = analyzeKnot(selectedKnot)
+        let updatedGoal = goal
+
+        if (inspectedResult.result === "PASS" && workerId !== "") {
+          try {
+            const response = await fetch("/api/goals", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ workerId }),
+            })
+            const payload = (await response.json()) as { error?: string; goal?: DailyGoalProgress }
+
+            if (!response.ok || !payload.goal) {
+              throw new Error(payload.error ?? "달성 수 업데이트에 실패했습니다.")
+            }
+
+            updatedGoal = payload.goal
+            setGoal(payload.goal)
+
+            if (!goal?.reached && payload.goal.reached) {
+              setShowCelebration(true)
+            }
+          } catch (updateError) {
+            setGoalError(updateError instanceof Error ? updateError.message : "달성 수 업데이트에 실패했습니다.")
+          }
+        }
+
+        setResult(inspectedResult)
+        setIsLoading(false)
+
+        if (inspectedResult.result === "FAIL" && updatedGoal) {
+          setGoal(updatedGoal)
+        }
+      })()
     }, 1500)
   }
 
   const handleReset = () => {
     setResult(null)
     setIsLoading(false)
+    setShowCelebration(false)
     void startCamera()
   }
 
   return (
     <main className="min-h-screen px-3 py-3 sm:px-4 sm:py-4 md:px-6 md:py-6">
+      {showCelebration ? (
+        <div className="pointer-events-none fixed inset-x-4 top-4 z-50 flex justify-center">
+          <div className="goal-burst relative overflow-hidden rounded-[2rem] border border-emerald-200 bg-white px-8 py-5 text-center shadow-2xl">
+            <div className="absolute -left-2 top-3 h-4 w-4 rounded-full bg-amber-300" />
+            <div className="absolute right-6 top-2 h-3 w-3 rounded-full bg-sky-300" />
+            <div className="absolute bottom-3 left-8 h-3 w-3 rounded-full bg-rose-300" />
+            <div className="absolute -right-1 bottom-4 h-4 w-4 rounded-full bg-emerald-300" />
+            <p className="text-lg font-bold text-emerald-600">오늘 목표를 달성했습니다</p>
+            <p className="mt-1 text-3xl font-black text-slate-900">축하합니다!</p>
+          </div>
+        </div>
+      ) : null}
+
       <div className="mx-auto flex min-h-[calc(100vh-1.5rem)] w-full max-w-5xl flex-col rounded-[1.75rem] bg-white/90 p-4 shadow-xl ring-1 ring-slate-200 sm:min-h-[calc(100vh-2rem)] sm:p-5 md:rounded-[2rem] md:p-8 lg:min-h-[calc(100vh-3rem)] lg:p-10">
         {isResultView && result ? (
           <section className="flex flex-1 flex-col items-center justify-center gap-6 py-3 text-center sm:gap-8">
@@ -142,6 +261,22 @@ export default function HomePage() {
             <div className="w-full max-w-2xl">
               <ResultCard knotType={selectedKnot} result={result} />
             </div>
+            {goal ? (
+              <div className="w-full max-w-2xl rounded-[2rem] border border-emerald-100 bg-emerald-50 p-5 text-left">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <p className="text-lg font-semibold text-emerald-700">오늘 목표 진행 현황</p>
+                    <p className="mt-1 text-2xl font-black text-slate-900">
+                      {goal.workerName} · {goal.achieved} / {goal.target}개
+                    </p>
+                  </div>
+                  <p className="text-4xl font-black text-slate-900">{goal.percent}%</p>
+                </div>
+                <div className="mt-4">
+                  <DailyGoalProgressBar percent={goal.percent} />
+                </div>
+              </div>
+            ) : null}
             <button
               type="button"
               onClick={handleReset}
@@ -159,16 +294,53 @@ export default function HomePage() {
               </h1>
             </header>
 
+            <section className="rounded-[2rem] border border-emerald-100 bg-emerald-50 p-4 md:p-5">
+              <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                <div>
+                  <p className="text-lg font-semibold text-emerald-700">오늘 목표 현황</p>
+                  <h2 className="mt-1 text-2xl font-black text-slate-900">오늘 목표 / 현재 달성 수 / 달성률</h2>
+                  <p className="mt-2 text-lg text-slate-600">
+                    {workerId === ""
+                      ? "작업자를 선택하면 오늘 목표와 달성 현황이 표시됩니다."
+                      : `${selectedWorker?.name ?? workerId} 작업자의 오늘 생산 진행 현황입니다.`}
+                  </p>
+                </div>
+                <p className="text-4xl font-black text-slate-900">{goal?.percent ?? 0}%</p>
+              </div>
+
+              <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                <article className="rounded-2xl bg-white px-4 py-4 ring-1 ring-emerald-100">
+                  <p className="text-base font-semibold text-slate-500">오늘 목표</p>
+                  <p className="mt-2 text-2xl font-black text-slate-900">{goal?.target ?? 0}개</p>
+                </article>
+                <article className="rounded-2xl bg-white px-4 py-4 ring-1 ring-emerald-100">
+                  <p className="text-base font-semibold text-slate-500">현재 달성 수</p>
+                  <p className="mt-2 text-2xl font-black text-pass">{goal?.achieved ?? 0}개</p>
+                </article>
+                <article className="rounded-2xl bg-white px-4 py-4 ring-1 ring-emerald-100">
+                  <p className="text-base font-semibold text-slate-500">상태</p>
+                  <p className="mt-2 text-2xl font-black text-slate-900">{goal?.reached ? "달성 완료" : "진행 중"}</p>
+                </article>
+              </div>
+
+              <div className="mt-4">
+                <DailyGoalProgressBar percent={goal?.percent ?? 0} />
+              </div>
+
+              {isGoalLoading ? <p className="mt-3 text-lg font-semibold text-slate-500">목표 정보를 불러오는 중입니다...</p> : null}
+              {goalError ? <p className="mt-3 text-lg font-semibold text-fail">{goalError}</p> : null}
+            </section>
+
             <label className="space-y-3">
               <span className="block text-lg font-bold text-slate-800 sm:text-xl">작업자 이름</span>
               <select
-                value={worker}
-                onChange={(event) => setWorker(event.target.value)}
+                value={workerId}
+                onChange={(event) => setWorkerId(event.target.value)}
                 className="min-h-16 w-full rounded-2xl border border-slate-300 bg-white px-5 py-4 text-lg text-slate-900 outline-none transition focus:border-slate-900 sm:text-xl"
               >
                 <option value="">작업자를 선택하세요</option>
                 {WORKERS.map((workerOption) => (
-                  <option key={workerOption.id} value={workerOption.name}>
+                  <option key={workerOption.id} value={workerOption.id}>
                     {workerOption.name}
                   </option>
                 ))}
