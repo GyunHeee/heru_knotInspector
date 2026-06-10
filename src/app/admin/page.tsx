@@ -13,12 +13,20 @@ export default function AdminPage() {
             <p className="text-lg font-semibold text-slate-500">관리자 화면</p>
             <h1 className="text-3xl font-black text-slate-900 md:text-4xl">오늘의 검사 현황</h1>
           </div>
-          <Link
-            href="/"
-            className="inline-flex min-h-14 items-center justify-center rounded-2xl border border-slate-300 bg-white px-5 py-3 text-base font-bold text-slate-700 transition hover:border-slate-500 sm:self-start"
-          >
-            검사 화면으로
-          </Link>
+          <div className="flex flex-wrap gap-3 sm:self-start">
+            <Link
+              href="/admin/workers"
+              className="inline-flex min-h-14 items-center justify-center rounded-2xl border border-slate-300 bg-white px-5 py-3 text-base font-bold text-slate-700 transition hover:border-slate-500"
+            >
+              작업자 관리
+            </Link>
+            <Link
+              href="/"
+              className="inline-flex min-h-14 items-center justify-center rounded-2xl border border-slate-300 bg-white px-5 py-3 text-base font-bold text-slate-700 transition hover:border-slate-500"
+            >
+              검사 화면으로
+            </Link>
+          </div>
         </div>
 
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
