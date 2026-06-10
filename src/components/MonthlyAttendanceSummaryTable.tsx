@@ -1,4 +1,4 @@
-import { formatWorkMinutes, type MonthlyWorkerSummary } from "@/lib/attendance"
+import { formatWorkMinutes, type MonthlyWorkerSummary } from "@/lib/attendanceShared"
 
 type MonthlyAttendanceSummaryTableProps = {
   summaries: MonthlyWorkerSummary[]

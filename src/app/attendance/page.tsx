@@ -6,7 +6,7 @@ import {
   formatAttendanceDateTime,
   type AttendanceRecord,
   type AttendanceType,
-} from "@/lib/attendance"
+} from "@/lib/attendanceShared"
 import { WORKERS, getWorkerById } from "@/lib/workers"
 
 // 작업자가 큰 버튼으로 출근과 퇴근을 남기는 출퇴근 메인 화면입니다.

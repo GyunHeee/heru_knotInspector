@@ -1,7 +1,11 @@
-import { sql } from "@vercel/postgres"
+import "server-only"
+import { Pool, type QueryResultRow } from "pg"
+import type {
+  AttendanceDashboardData,
+  AttendanceRecord,
+  AttendanceType,
+} from "@/lib/attendanceShared"
 import { getWorkerById, getWorkerName, WORKERS } from "@/lib/workers"
-
-export type AttendanceType = "IN" | "OUT"
 
 type AttendanceRow = {
   id: number
@@ -10,53 +14,49 @@ type AttendanceRow = {
   timestamp: Date
 }
 
-export type AttendanceRecord = {
-  id: number
-  workerId: string
-  workerName: string
-  type: AttendanceType
-  timestamp: string
-}
+const connectionString =
+  process.env.DATABASE_URL ?? process.env.POSTGRES_URL ?? process.env.POSTGRES_PRISMA_URL ?? null
 
-export type MonthlyWorkerSummary = {
-  workerId: string
-  workerName: string
-  totalMinutes: number
-  workDays: number
-}
+const db = connectionString
+  ? new Pool({
+      connectionString,
+      ssl: false,
+    })
+  : null
 
-export type AttendanceDashboardData = {
-  dbConfigured: boolean
-  todayCount: number
-  monthlyTotalMinutes: number
-  recentRecords: AttendanceRecord[]
-  monthlySummaries: MonthlyWorkerSummary[]
-}
-
-const DB_ENV_KEYS = ["POSTGRES_URL", "POSTGRES_PRISMA_URL", "DATABASE_URL"] as const
-
-// Vercel Postgres 연결 여부를 확인하는 헬퍼입니다.
+// Vercel Postgres 또는 로컬 Postgres 연결 여부를 확인하는 헬퍼입니다.
 export function isAttendanceDbConfigured() {
-  return DB_ENV_KEYS.some((key) => {
-    const value = process.env[key]
-    return typeof value === "string" && value.length > 0
-  })
+  return typeof connectionString === "string" && connectionString.length > 0
+}
+
+function getDb() {
+  if (!db) {
+    throw new Error("DB_NOT_CONFIGURED")
+  }
+
+  return db
+}
+
+async function queryRows<T extends QueryResultRow>(queryText: string, values: unknown[] = []) {
+  const pool = getDb()
+  const result = await pool.query<T>(queryText, values)
+  return result.rows
 }
 
 async function ensureAttendanceSchema() {
-  await sql`
+  await queryRows(`
     CREATE TABLE IF NOT EXISTS attendance (
       id SERIAL PRIMARY KEY,
       worker_id VARCHAR(20) NOT NULL,
       type VARCHAR(3) NOT NULL CHECK (type IN ('IN', 'OUT')),
       "timestamp" TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
-  `
+  `)
 
-  await sql`
+  await queryRows(`
     CREATE INDEX IF NOT EXISTS idx_attendance_worker_timestamp
     ON attendance (worker_id, "timestamp" DESC)
-  `
+  `)
 }
 
 function mapAttendanceRow(row: AttendanceRow): AttendanceRecord {
@@ -141,13 +141,16 @@ export async function createAttendanceRecord(input: {
 
   await ensureAttendanceSchema()
 
-  const result = await sql<AttendanceRow>`
-    INSERT INTO attendance (worker_id, type)
-    VALUES (${input.workerId}, ${input.type})
-    RETURNING id, worker_id, type, "timestamp"
-  `
+  const rows = await queryRows<AttendanceRow>(
+    `
+      INSERT INTO attendance (worker_id, type)
+      VALUES ($1, $2)
+      RETURNING id, worker_id, type, "timestamp"
+    `,
+    [input.workerId, input.type],
+  )
 
-  return mapAttendanceRow(result.rows[0])
+  return mapAttendanceRow(rows[0])
 }
 
 // 관리자 화면용 출퇴근 이력과 월 집계를 읽어오는 함수입니다.
@@ -172,22 +175,27 @@ export async function getAttendanceDashboardData(): Promise<AttendanceDashboardD
   const { start, end } = getMonthRange()
   const today = toKstDateKey(new Date().toISOString())
 
-  const recentResult = await sql<AttendanceRow>`
-    SELECT id, worker_id, type, "timestamp"
-    FROM attendance
-    ORDER BY "timestamp" DESC
-    LIMIT 100
-  `
+  const recentRows = await queryRows<AttendanceRow>(
+    `
+      SELECT id, worker_id, type, "timestamp"
+      FROM attendance
+      ORDER BY "timestamp" DESC
+      LIMIT 100
+    `,
+  )
 
-  const monthlyResult = await sql<AttendanceRow>`
-    SELECT id, worker_id, type, "timestamp"
-    FROM attendance
-    WHERE "timestamp" >= ${start.toISOString()} AND "timestamp" < ${end.toISOString()}
-    ORDER BY "timestamp" ASC
-  `
+  const monthlyRows = await queryRows<AttendanceRow>(
+    `
+      SELECT id, worker_id, type, "timestamp"
+      FROM attendance
+      WHERE "timestamp" >= $1 AND "timestamp" < $2
+      ORDER BY "timestamp" ASC
+    `,
+    [start.toISOString(), end.toISOString()],
+  )
 
-  const recentRecords = recentResult.rows.map(mapAttendanceRow)
-  const monthlyRecords = monthlyResult.rows.map(mapAttendanceRow)
+  const recentRecords = recentRows.map(mapAttendanceRow)
+  const monthlyRecords = monthlyRows.map(mapAttendanceRow)
   const monthlySummaries = buildMonthlySummaries(monthlyRecords)
   const monthlyTotalMinutes = monthlySummaries.reduce(
     (sum, summary) => sum + summary.totalMinutes,
@@ -202,22 +210,4 @@ export async function getAttendanceDashboardData(): Promise<AttendanceDashboardD
     recentRecords,
     monthlySummaries,
   }
-}
-
-export function formatAttendanceDateTime(timestamp: string) {
-  return new Intl.DateTimeFormat("ko-KR", {
-    timeZone: "Asia/Seoul",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(timestamp))
-}
-
-export function formatWorkMinutes(totalMinutes: number) {
-  const hours = Math.floor(totalMinutes / 60)
-  const minutes = totalMinutes % 60
-
-  return `${hours}시간 ${minutes}분`
 }

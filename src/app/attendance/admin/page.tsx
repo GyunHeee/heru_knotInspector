@@ -1,10 +1,8 @@
 import Link from "next/link"
 import AttendanceHistoryTable from "@/components/AttendanceHistoryTable"
 import MonthlyAttendanceSummaryTable from "@/components/MonthlyAttendanceSummaryTable"
-import {
-  formatWorkMinutes,
-  getAttendanceDashboardData,
-} from "@/lib/attendance"
+import { formatWorkMinutes } from "@/lib/attendanceShared"
+import { getAttendanceDashboardData } from "@/lib/attendance"
 
 export const dynamic = "force-dynamic"
 
