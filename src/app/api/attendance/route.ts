@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server"
-import {
-  createAttendanceRecord,
-  isAttendanceDbConfigured,
-  type AttendanceType,
-} from "@/lib/attendance"
+import { createAttendanceRecord, isAttendanceDbConfigured } from "@/lib/attendance"
+import type { AttendanceType } from "@/lib/attendanceShared"
 
 type AttendanceRequestBody = {
   workerId?: string

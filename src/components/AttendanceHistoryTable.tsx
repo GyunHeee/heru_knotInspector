@@ -1,7 +1,7 @@
 import {
   formatAttendanceDateTime,
   type AttendanceRecord,
-} from "@/lib/attendance"
+} from "@/lib/attendanceShared"
 
 type AttendanceHistoryTableProps = {
   records: AttendanceRecord[]
