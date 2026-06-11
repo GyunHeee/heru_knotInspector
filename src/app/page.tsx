@@ -6,6 +6,7 @@ import DailyGoalProgressBar from "@/components/DailyGoalProgressBar"
 import KnotSelector from "@/components/KnotSelector"
 import ResultCard from "@/components/ResultCard"
 import type { DailyGoalProgress } from "@/lib/dailyGoalsShared"
+import type { NoticeListResponse } from "@/lib/noticesShared"
 import { analyzeKnot, type KnotResult } from "@/lib/mockAnalyzer"
 import { getWorkerById, WORKERS } from "@/lib/workers"
 
@@ -23,6 +24,7 @@ export default function HomePage() {
   const [goalError, setGoalError] = useState<string | null>(null)
   const [isGoalLoading, setIsGoalLoading] = useState(false)
   const [showCelebration, setShowCelebration] = useState(false)
+  const [unreadNoticeCount, setUnreadNoticeCount] = useState(0)
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
@@ -43,6 +45,40 @@ export default function HomePage() {
       }
     }
   }, [])
+
+  useEffect(() => {
+    if (workerId === "") {
+      setUnreadNoticeCount(0)
+      return
+    }
+
+    let ignore = false
+
+    const loadUnreadNotices = async () => {
+      try {
+        const response = await fetch(`/api/notices?workerId=${workerId}`, { cache: "no-store" })
+        const payload = (await response.json()) as Partial<NoticeListResponse> & { error?: string }
+
+        if (!response.ok) {
+          throw new Error(payload.error ?? "공지 정보를 불러오지 못했습니다.")
+        }
+
+        if (!ignore) {
+          setUnreadNoticeCount(payload.unreadCount ?? 0)
+        }
+      } catch {
+        if (!ignore) {
+          setUnreadNoticeCount(0)
+        }
+      }
+    }
+
+    void loadUnreadNotices()
+
+    return () => {
+      ignore = true
+    }
+  }, [workerId])
 
   useEffect(() => {
     if (workerId === "") {
@@ -447,6 +483,17 @@ export default function HomePage() {
         <div className="mt-4 flex flex-wrap justify-end gap-4 sm:mt-6">
           <Link href="/attendance" className="text-base font-semibold text-slate-500 underline-offset-4 hover:underline">
             출퇴근 기록
+          </Link>
+          <Link
+            href={workerId ? `/notices?workerId=${workerId}` : "/notices"}
+            className="inline-flex items-center gap-2 text-base font-semibold text-slate-500 underline-offset-4 hover:underline"
+          >
+            공지
+            {workerId !== "" && unreadNoticeCount > 0 ? (
+              <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-fail px-2 py-1 text-sm font-bold text-white">
+                {unreadNoticeCount}
+              </span>
+            ) : null}
           </Link>
           <Link href="/admin" className="text-base font-semibold text-slate-500 underline-offset-4 hover:underline">
             관리자
