@@ -1,0 +1,9 @@
+<svg width="1200" height="720" viewBox="0 0 1200 720" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="720" rx="40" fill="#FFFBEB"/>
+  <rect x="60" y="60" width="1080" height="600" rx="32" fill="#FCE7F3"/>
+  <circle cx="600" cy="360" r="54" fill="#F59E0B"/>
+  <circle cx="520" cy="290" r="70" stroke="#A16207" stroke-width="22"/>
+  <circle cx="680" cy="290" r="70" stroke="#A16207" stroke-width="22"/>
+  <text x="90" y="130" fill="#0F172A" font-size="56" font-family="Pretendard, sans-serif" font-weight="800">매화 1단계</text>
+  <text x="90" y="190" fill="#475569" font-size="30" font-family="Pretendard, sans-serif">가운데 중심을 잡고 첫 꽃잎 두 개의 위치를 맞춰주세요.</text>
+</svg>

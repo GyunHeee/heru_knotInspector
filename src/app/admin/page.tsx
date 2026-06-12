@@ -39,6 +39,12 @@ export default function AdminPage() {
               신고 관리
             </Link>
             <Link
+              href="/admin/guides"
+              className="inline-flex min-h-14 items-center justify-center rounded-2xl border border-slate-300 bg-white px-5 py-3 text-base font-bold text-slate-700 transition hover:border-slate-500"
+            >
+              가이드 관리
+            </Link>
+            <Link
               href="/"
               className="inline-flex min-h-14 items-center justify-center rounded-2xl border border-slate-300 bg-white px-5 py-3 text-base font-bold text-slate-700 transition hover:border-slate-500"
             >

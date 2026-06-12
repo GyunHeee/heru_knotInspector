@@ -1,0 +1,9 @@
+<svg width="1200" height="720" viewBox="0 0 1200 720" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="720" rx="40" fill="#F8FAFC"/>
+  <rect x="60" y="60" width="1080" height="600" rx="32" fill="#DCFCE7"/>
+  <path d="M400 240C480 320 540 350 600 360C660 350 720 320 800 240" stroke="#7C5A3C" stroke-width="34" stroke-linecap="round"/>
+  <path d="M430 470C510 400 550 370 600 360C650 370 690 400 770 470" stroke="#92400E" stroke-width="34" stroke-linecap="round"/>
+  <circle cx="600" cy="360" r="78" stroke="#166534" stroke-width="16" fill="#FEF3C7"/>
+  <text x="90" y="130" fill="#0F172A" font-size="56" font-family="Pretendard, sans-serif" font-weight="800">동심결 3단계</text>
+  <text x="90" y="190" fill="#475569" font-size="30" font-family="Pretendard, sans-serif">중심 매듭을 조이면서 좌우 루프 크기를 같게 정리합니다.</text>
+</svg>
