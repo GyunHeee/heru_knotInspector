@@ -1,0 +1,9 @@
+<svg width="1200" height="720" viewBox="0 0 1200 720" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="720" rx="40" fill="#F8FAFC"/>
+  <rect x="60" y="60" width="1080" height="600" rx="32" fill="#E2E8F0"/>
+  <path d="M380 230C470 320 520 350 600 360C670 350 730 320 820 230" stroke="#7C5A3C" stroke-width="36" stroke-linecap="round"/>
+  <path d="M420 470C500 390 540 350 600 320C650 350 700 390 780 470" stroke="#A16207" stroke-width="36" stroke-linecap="round"/>
+  <circle cx="600" cy="360" r="58" stroke="#0F172A" stroke-width="14" fill="#FFF7ED"/>
+  <text x="90" y="130" fill="#0F172A" font-size="56" font-family="Pretendard, sans-serif" font-weight="800">동심결 1단계</text>
+  <text x="90" y="190" fill="#475569" font-size="30" font-family="Pretendard, sans-serif">중심 고리를 만들고 좌우 끈을 같은 길이로 맞춰주세요.</text>
+</svg>

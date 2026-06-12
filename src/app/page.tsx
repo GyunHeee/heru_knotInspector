@@ -484,6 +484,9 @@ export default function HomePage() {
           <Link href="/attendance" className="text-base font-semibold text-slate-500 underline-offset-4 hover:underline">
             출퇴근 기록
           </Link>
+          <Link href="/guides" className="text-base font-semibold text-slate-500 underline-offset-4 hover:underline">
+            가이드
+          </Link>
           <Link href="/reports" className="text-base font-semibold text-slate-500 underline-offset-4 hover:underline">
             신고
           </Link>
