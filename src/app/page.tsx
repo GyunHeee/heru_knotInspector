@@ -3,12 +3,14 @@
 import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
 import DailyGoalProgressBar from "@/components/DailyGoalProgressBar"
+import SpeakerIcon from "@/components/SpeakerIcon"
 import KnotSelector from "@/components/KnotSelector"
 import ResultCard from "@/components/ResultCard"
 import type { DailyGoalProgress } from "@/lib/dailyGoalsShared"
 import type { NoticeListResponse } from "@/lib/noticesShared"
 import { analyzeKnot, type KnotResult } from "@/lib/mockAnalyzer"
 import { getWorkerById, WORKERS } from "@/lib/workers"
+import { DEFAULT_VOICE_SETTINGS, loadVoiceSettings, speakKorean, type VoiceSettings } from "@/lib/voiceSettings"
 
 // 작업자가 실제 카메라로 사진을 촬영하고 검사 결과를 확인하는 메인 화면입니다.
 export default function HomePage() {
@@ -25,14 +27,34 @@ export default function HomePage() {
   const [isGoalLoading, setIsGoalLoading] = useState(false)
   const [showCelebration, setShowCelebration] = useState(false)
   const [unreadNoticeCount, setUnreadNoticeCount] = useState(0)
+  const [voiceSettings, setVoiceSettings] = useState<VoiceSettings>(DEFAULT_VOICE_SETTINGS)
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const celebrationTimeoutRef = useRef<number | null>(null)
+  const previousUnreadNoticeCountRef = useRef(0)
+  const hasSpokenResultRef = useRef(false)
 
   const selectedWorker = getWorkerById(workerId)
   const canStart = workerId !== "" && selectedKnot !== "" && capturedImage !== null && !isLoading
   const isResultView = result !== null
+
+  useEffect(() => {
+    const nextSettings = loadVoiceSettings()
+    setVoiceSettings(nextSettings)
+
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key) {
+        setVoiceSettings(loadVoiceSettings())
+      }
+    }
+
+    window.addEventListener("storage", handleStorage)
+
+    return () => {
+      window.removeEventListener("storage", handleStorage)
+    }
+  }, [])
 
   useEffect(() => {
     void startCamera()
@@ -122,6 +144,38 @@ export default function HomePage() {
       ignore = true
     }
   }, [workerId])
+
+  useEffect(() => {
+    if (!result) {
+      hasSpokenResultRef.current = false
+      return
+    }
+
+    if (hasSpokenResultRef.current) {
+      return
+    }
+
+    const speechText =
+      result.result === "PASS"
+        ? "합격입니다"
+        : `불합격입니다. 사유: ${result.reason ?? "확인 필요"}`
+
+    speakKorean(speechText, voiceSettings)
+    hasSpokenResultRef.current = true
+  }, [result, voiceSettings])
+
+  useEffect(() => {
+    if (workerId === "") {
+      previousUnreadNoticeCountRef.current = 0
+      return
+    }
+
+    if (unreadNoticeCount > previousUnreadNoticeCountRef.current && previousUnreadNoticeCountRef.current > 0) {
+      speakKorean("새 공지가 있습니다", voiceSettings)
+    }
+
+    previousUnreadNoticeCountRef.current = unreadNoticeCount
+  }, [workerId, unreadNoticeCount, voiceSettings])
 
   useEffect(() => {
     if (!showCelebration) {
@@ -266,6 +320,7 @@ export default function HomePage() {
     setResult(null)
     setIsLoading(false)
     setShowCelebration(false)
+    hasSpokenResultRef.current = false
     void startCamera()
   }
 
@@ -500,6 +555,13 @@ export default function HomePage() {
                 {unreadNoticeCount}
               </span>
             ) : null}
+          </Link>
+          <Link
+            href="/settings"
+            className="inline-flex items-center gap-2 text-base font-semibold text-slate-500 underline-offset-4 hover:underline"
+          >
+            {voiceSettings.enabled ? <SpeakerIcon className="h-5 w-5" /> : null}
+            음성 설정
           </Link>
           <Link href="/admin" className="text-base font-semibold text-slate-500 underline-offset-4 hover:underline">
             관리자
