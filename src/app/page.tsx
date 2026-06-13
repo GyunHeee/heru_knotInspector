@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
+import BreakReminderDialog from "@/components/BreakReminderDialog"
 import DailyGoalProgressBar from "@/components/DailyGoalProgressBar"
 import SpeakerIcon from "@/components/SpeakerIcon"
 import KnotSelector from "@/components/KnotSelector"
@@ -11,6 +12,7 @@ import type { NoticeListResponse } from "@/lib/noticesShared"
 import { analyzeKnot, type KnotResult } from "@/lib/mockAnalyzer"
 import { getWorkerById, WORKERS } from "@/lib/workers"
 import { DEFAULT_VOICE_SETTINGS, loadVoiceSettings, speakKorean, type VoiceSettings } from "@/lib/voiceSettings"
+import { DEFAULT_BREAK_REMINDER_SETTINGS, loadBreakReminderSettings, type BreakReminderSettings } from "@/lib/breakReminderSettings"
 
 // 작업자가 실제 카메라로 사진을 촬영하고 검사 결과를 확인하는 메인 화면입니다.
 export default function HomePage() {
@@ -28,25 +30,32 @@ export default function HomePage() {
   const [showCelebration, setShowCelebration] = useState(false)
   const [unreadNoticeCount, setUnreadNoticeCount] = useState(0)
   const [voiceSettings, setVoiceSettings] = useState<VoiceSettings>(DEFAULT_VOICE_SETTINGS)
+  const [breakReminderSettings, setBreakReminderSettings] = useState<BreakReminderSettings>(DEFAULT_BREAK_REMINDER_SETTINGS)
+  const [isWorking, setIsWorking] = useState(false)
+  const [showBreakReminder, setShowBreakReminder] = useState(false)
+  const [breakCountdownSeconds, setBreakCountdownSeconds] = useState(300)
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const celebrationTimeoutRef = useRef<number | null>(null)
   const previousUnreadNoticeCountRef = useRef(0)
   const hasSpokenResultRef = useRef(false)
+  const breakIntervalRef = useRef<number | null>(null)
+  const breakCountdownIntervalRef = useRef<number | null>(null)
 
   const selectedWorker = getWorkerById(workerId)
   const canStart = workerId !== "" && selectedKnot !== "" && capturedImage !== null && !isLoading
   const isResultView = result !== null
 
   useEffect(() => {
-    const nextSettings = loadVoiceSettings()
-    setVoiceSettings(nextSettings)
+    const nextVoiceSettings = loadVoiceSettings()
+    const nextBreakReminderSettings = loadBreakReminderSettings()
+    setVoiceSettings(nextVoiceSettings)
+    setBreakReminderSettings(nextBreakReminderSettings)
 
-    const handleStorage = (event: StorageEvent) => {
-      if (event.key) {
-        setVoiceSettings(loadVoiceSettings())
-      }
+    const handleStorage = () => {
+      setVoiceSettings(loadVoiceSettings())
+      setBreakReminderSettings(loadBreakReminderSettings())
     }
 
     window.addEventListener("storage", handleStorage)
@@ -177,6 +186,104 @@ export default function HomePage() {
     previousUnreadNoticeCountRef.current = unreadNoticeCount
   }, [workerId, unreadNoticeCount, voiceSettings])
 
+
+  useEffect(() => {
+    if (workerId === "") {
+      setIsWorking(false)
+      return
+    }
+
+    let ignore = false
+
+    const loadAttendanceStatus = async () => {
+      try {
+        const response = await fetch(`/api/break-status?workerId=${workerId}`, { cache: "no-store" })
+        const payload = (await response.json()) as {
+          error?: string
+          status?: { isWorking?: boolean }
+        }
+
+        if (!response.ok) {
+          throw new Error(payload.error ?? "출근 상태를 불러오지 못했습니다.")
+        }
+
+        if (!ignore) {
+          setIsWorking(payload.status?.isWorking ?? false)
+        }
+      } catch {
+        if (!ignore) {
+          setIsWorking(false)
+        }
+      }
+    }
+
+    void loadAttendanceStatus()
+
+    return () => {
+      ignore = true
+    }
+  }, [workerId])
+
+  useEffect(() => {
+    if (breakIntervalRef.current) {
+      window.clearInterval(breakIntervalRef.current)
+      breakIntervalRef.current = null
+    }
+
+    if (!breakReminderSettings.enabled || !isWorking || workerId === "") {
+      return
+    }
+
+    breakIntervalRef.current = window.setInterval(() => {
+      setShowBreakReminder(true)
+      setBreakCountdownSeconds(300)
+      speakKorean("휴식 시간입니다", voiceSettings)
+
+      if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+        new Notification("휴식 알림", {
+          body: "잠깐 쉬세요! 5분 후 다시 시작해요",
+        })
+      }
+    }, breakReminderSettings.intervalMinutes * 60 * 1000)
+
+    return () => {
+      if (breakIntervalRef.current) {
+        window.clearInterval(breakIntervalRef.current)
+        breakIntervalRef.current = null
+      }
+    }
+  }, [breakReminderSettings, isWorking, voiceSettings, workerId])
+
+  useEffect(() => {
+    if (!showBreakReminder) {
+      if (breakCountdownIntervalRef.current) {
+        window.clearInterval(breakCountdownIntervalRef.current)
+        breakCountdownIntervalRef.current = null
+      }
+      return
+    }
+
+    breakCountdownIntervalRef.current = window.setInterval(() => {
+      setBreakCountdownSeconds((current) => {
+        if (current <= 1) {
+          if (breakCountdownIntervalRef.current) {
+            window.clearInterval(breakCountdownIntervalRef.current)
+            breakCountdownIntervalRef.current = null
+          }
+          return 0
+        }
+
+        return current - 1
+      })
+    }, 1000)
+
+    return () => {
+      if (breakCountdownIntervalRef.current) {
+        window.clearInterval(breakCountdownIntervalRef.current)
+        breakCountdownIntervalRef.current = null
+      }
+    }
+  }, [showBreakReminder])
   useEffect(() => {
     if (!showCelebration) {
       return
@@ -320,12 +427,16 @@ export default function HomePage() {
     setResult(null)
     setIsLoading(false)
     setShowCelebration(false)
+    setShowBreakReminder(false)
     hasSpokenResultRef.current = false
     void startCamera()
   }
 
   return (
     <main className="min-h-screen px-3 py-3 sm:px-4 sm:py-4 md:px-6 md:py-6">
+      {showBreakReminder ? (
+        <BreakReminderDialog countdownSeconds={breakCountdownSeconds} onClose={() => setShowBreakReminder(false)} />
+      ) : null}
       {showCelebration ? (
         <div className="pointer-events-none fixed inset-x-4 top-4 z-50 flex justify-center">
           <div className="goal-burst relative overflow-hidden rounded-[2rem] border border-emerald-200 bg-white px-8 py-5 text-center shadow-2xl">
@@ -561,7 +672,7 @@ export default function HomePage() {
             className="inline-flex items-center gap-2 text-base font-semibold text-slate-500 underline-offset-4 hover:underline"
           >
             {voiceSettings.enabled ? <SpeakerIcon className="h-5 w-5" /> : null}
-            음성 설정
+            설정
           </Link>
           <Link href="/admin" className="text-base font-semibold text-slate-500 underline-offset-4 hover:underline">
             관리자

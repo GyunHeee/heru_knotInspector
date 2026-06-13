@@ -4,6 +4,7 @@ import type {
   AttendanceDashboardData,
   AttendanceRecord,
   AttendanceType,
+  WorkerAttendanceStatus,
 } from "@/lib/attendanceShared"
 import { getWorkerById, getWorkerName, WORKERS } from "@/lib/workers"
 
@@ -209,5 +210,46 @@ export async function getAttendanceDashboardData(): Promise<AttendanceDashboardD
     monthlyTotalMinutes,
     recentRecords,
     monthlySummaries,
+  }
+}
+
+// 작업자의 최신 출퇴근 상태를 조회하는 함수입니다.
+export async function getWorkerAttendanceStatus(workerId: string): Promise<WorkerAttendanceStatus> {
+  const worker = getWorkerById(workerId)
+
+  if (!worker) {
+    throw new Error("INVALID_WORKER")
+  }
+
+  if (!isAttendanceDbConfigured()) {
+    return {
+      workerId,
+      workerName: worker.name,
+      isWorking: false,
+      latestRecord: null,
+    }
+  }
+
+  await ensureAttendanceSchema()
+
+  const rows = await queryRows<AttendanceRow>(
+    `
+      SELECT id, worker_id, type, "timestamp"
+      FROM attendance
+      WHERE worker_id = $1
+      ORDER BY "timestamp" DESC
+      LIMIT 1
+    `,
+    [workerId],
+  )
+
+  const latestRow = rows[0]
+  const latestRecord = latestRow ? mapAttendanceRow(latestRow) : null
+
+  return {
+    workerId,
+    workerName: worker.name,
+    isWorking: latestRecord?.type === "IN",
+    latestRecord,
   }
 }
