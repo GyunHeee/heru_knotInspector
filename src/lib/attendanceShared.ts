@@ -15,6 +15,14 @@ export type MonthlyWorkerSummary = {
   workDays: number
 }
 
+
+export type WorkerAttendanceStatus = {
+  workerId: string
+  workerName: string
+  isWorking: boolean
+  latestRecord: AttendanceRecord | null
+}
+
 export type AttendanceDashboardData = {
   dbConfigured: boolean
   todayCount: number
