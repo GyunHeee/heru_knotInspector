@@ -4,6 +4,7 @@ import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
 import BreakReminderDialog from "@/components/BreakReminderDialog"
 import DailyGoalProgressBar from "@/components/DailyGoalProgressBar"
+import ResponsiveMenu from "@/components/ResponsiveMenu"
 import SpeakerIcon from "@/components/SpeakerIcon"
 import KnotSelector from "@/components/KnotSelector"
 import ResultCard from "@/components/ResultCard"
@@ -46,6 +47,30 @@ export default function HomePage() {
   const selectedWorker = getWorkerById(workerId)
   const canStart = workerId !== "" && selectedKnot !== "" && capturedImage !== null && !isLoading
   const isResultView = result !== null
+  const todayLabel = new Intl.DateTimeFormat("ko-KR", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    weekday: "long",
+  }).format(new Date())
+  const todayLabelCompact = new Intl.DateTimeFormat("ko-KR", {
+    month: "long",
+    day: "numeric",
+    weekday: "short",
+  }).format(new Date())
+  const inspectionSteps = [
+    { number: "1", title: "작업자 선택", complete: workerId !== "" },
+    { number: "2", title: "매듭 종류 선택", complete: selectedKnot !== "" },
+    { number: "3", title: "촬영 준비", complete: capturedImage !== null },
+  ] as const
+  const quickLinks = [
+    { href: "/attendance", label: "출퇴근 기록" },
+    { href: "/guides", label: "가이드" },
+    { href: "/reports", label: "신고" },
+    { href: workerId ? `/notices?workerId=${workerId}` : "/notices", label: "공지", badgeCount: unreadNoticeCount },
+    { href: "/settings", label: "설정" },
+    { href: "/admin", label: "관리자" },
+  ]
 
   useEffect(() => {
     const nextVoiceSettings = loadVoiceSettings()
@@ -439,40 +464,52 @@ export default function HomePage() {
       ) : null}
       {showCelebration ? (
         <div className="pointer-events-none fixed inset-x-4 top-4 z-50 flex justify-center">
-          <div className="goal-burst relative overflow-hidden rounded-[2rem] border border-emerald-200 bg-white px-8 py-5 text-center shadow-2xl">
+          <div className="goal-burst relative overflow-hidden rounded-[1.1rem] border border-pass/20 bg-white px-8 py-5 text-center shadow-card">
             <div className="absolute -left-2 top-3 h-4 w-4 rounded-full bg-amber-300" />
             <div className="absolute right-6 top-2 h-3 w-3 rounded-full bg-sky-300" />
             <div className="absolute bottom-3 left-8 h-3 w-3 rounded-full bg-rose-300" />
             <div className="absolute -right-1 bottom-4 h-4 w-4 rounded-full bg-emerald-300" />
-            <p className="text-lg font-bold text-emerald-600">오늘 목표를 달성했습니다</p>
-            <p className="mt-1 text-3xl font-black text-slate-900">축하합니다!</p>
+            <p className="text-lg font-bold text-pass">오늘 목표를 달성했습니다</p>
+            <p className="mt-1 text-3xl font-black text-knot-ink">축하합니다!</p>
           </div>
         </div>
       ) : null}
 
-      <div className="mx-auto flex min-h-[calc(100vh-1.5rem)] w-full max-w-5xl flex-col rounded-[1.75rem] bg-white/90 p-4 shadow-xl ring-1 ring-slate-200 sm:min-h-[calc(100vh-2rem)] sm:p-5 md:rounded-[2rem] md:p-8 lg:min-h-[calc(100vh-3rem)] lg:p-10">
+      <div className="knot-panel mx-auto flex min-h-[calc(100vh-1.5rem)] w-full max-w-6xl flex-col overflow-hidden rounded-[1.25rem] p-3 sm:min-h-[calc(100vh-2rem)] sm:p-5 md:p-8 lg:min-h-[calc(100vh-3rem)] lg:p-10">
+        <div className="mb-4 flex justify-end md:hidden">
+          <ResponsiveMenu links={quickLinks} title="검사 메뉴" />
+        </div>
         {isResultView && result ? (
-          <section className="flex flex-1 flex-col items-center justify-center gap-6 py-3 text-center sm:gap-8">
+          <section className="result-appear flex flex-1 flex-col items-center justify-center gap-6 py-3 text-center sm:gap-8">
             <div
-              className={`leading-none font-black ${
-                result.result === "PASS" ? "text-pass" : "text-fail"
-              } text-[140px] sm:text-[180px] md:text-[220px]`}
+              className={`flex h-[210px] w-[210px] items-center justify-center rounded-full border text-center shadow-card sm:h-[240px] sm:w-[240px] md:h-[280px] md:w-[280px] ${
+                result.result === "PASS"
+                  ? "knot-result-pass border-pass/20 text-pass"
+                  : "knot-result-fail border-fail/20 text-fail"
+              }`}
             >
-              {result.result === "PASS" ? "O" : "X"}
+              <div>
+                <div className="text-[78px] font-black leading-none sm:text-[92px] md:text-[108px]">
+                  {result.result === "PASS" ? "✓" : "✕"}
+                </div>
+                <p className="mt-3 text-3xl font-black tracking-tight md:text-4xl">
+                  {result.result === "PASS" ? "합격" : "불합격"}
+                </p>
+              </div>
             </div>
             <div className="w-full max-w-2xl">
               <ResultCard knotType={selectedKnot} result={result} />
             </div>
             {goal ? (
-              <div className="w-full max-w-2xl rounded-[2rem] border border-emerald-100 bg-emerald-50 p-5 text-left">
+              <div className="w-full max-w-2xl rounded-[1.05rem] border border-knot-sand bg-knot-ivory p-5 text-left shadow-card">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                   <div>
-                    <p className="text-lg font-semibold text-emerald-700">오늘 목표 진행 현황</p>
-                    <p className="mt-1 text-2xl font-black text-slate-900">
+                    <p className="text-lg font-semibold text-knot-red">오늘 목표 진행 현황</p>
+                    <p className="mt-1 text-2xl font-black text-knot-ink">
                       {goal.workerName} · {goal.achieved} / {goal.target}개
                     </p>
                   </div>
-                  <p className="text-4xl font-black text-slate-900">{goal.percent}%</p>
+                  <p className="text-4xl font-black text-knot-ink">{goal.percent}%</p>
                 </div>
                 <div className="mt-4">
                   <DailyGoalProgressBar percent={goal.percent} />
@@ -482,46 +519,87 @@ export default function HomePage() {
             <button
               type="button"
               onClick={handleReset}
-              className="min-h-16 w-full max-w-sm rounded-2xl bg-slate-900 px-8 py-4 text-xl font-bold text-white transition hover:bg-slate-700"
+              className="soft-press min-h-16 w-full max-w-sm rounded-[1rem] bg-knot-ink px-8 py-4 text-xl font-bold text-white hover:bg-knot-brown"
             >
               다시 검사
             </button>
           </section>
         ) : (
           <section className="flex flex-1 flex-col gap-5 md:gap-7">
-            <header className="space-y-3">
-              <p className="text-base font-semibold text-slate-500 sm:text-lg">매듭 품질 검사 데모</p>
-              <h1 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl md:text-4xl">
-                작업 전 매듭 상태를 빠르게 확인하세요
-              </h1>
+            <header className="rounded-[1.1rem] border border-knot-sand bg-white/78 p-4 shadow-card sm:p-5">
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <div className="inline-flex rounded-full bg-knot-red/10 px-4 py-2 text-sm font-bold text-knot-red">
+                    전통매듭 검사
+                  </div>
+                  <h1 className="mt-4 text-[2.35rem] font-black tracking-tight leading-[1.08] text-knot-ink sm:text-4xl md:text-5xl">
+                    작업 전 매듭 상태를
+                    <br className="hidden sm:block" /> 빠르고 편안하게 확인하세요
+                  </h1>
+                  <p className="mt-3 text-lg text-knot-brown">
+                    전통 공예의 섬세함을 해치지 않으면서도, 큰 글씨와 단계 안내로 누구나 쉽게 검사할 수 있도록 구성했습니다.
+                  </p>
+                </div>
+                <div className="rounded-[1rem] bg-knot-ivory px-4 py-4 text-left shadow-sm md:min-w-[220px]">
+                  <p className="text-base font-semibold text-knot-brown">오늘 날짜</p>
+                  <p className="mt-2 text-xl font-black text-knot-ink sm:hidden">{todayLabelCompact}</p>
+                  <p className="mt-2 hidden text-2xl font-black text-knot-ink sm:block">{todayLabel}</p>
+                </div>
+              </div>
+              <div className="mt-5 grid gap-3 md:grid-cols-3">
+                {inspectionSteps.map((step) => (
+                  <article
+                    key={step.number}
+                    className={`rounded-[1rem] border px-4 py-3.5 sm:py-4 ${
+                      step.complete
+                        ? "border-knot-red/20 bg-knot-red/10"
+                        : "border-knot-sand bg-knot-paper/55"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-knot-brown">{step.number}단계</p>
+                        <p className="mt-1 text-lg font-black text-knot-ink sm:text-xl">{step.title}</p>
+                      </div>
+                      <span
+                        className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-lg font-black ${
+                          step.complete ? "bg-knot-red text-white" : "bg-white text-knot-brown"
+                        }`}
+                      >
+                        {step.complete ? "✓" : step.number}
+                      </span>
+                    </div>
+                  </article>
+                ))}
+              </div>
             </header>
 
-            <section className="rounded-[2rem] border border-emerald-100 bg-emerald-50 p-4 md:p-5">
+            <section className="rounded-[1.1rem] border border-knot-sand bg-knot-ivory/90 p-4 shadow-card md:p-5">
               <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                 <div>
-                  <p className="text-lg font-semibold text-emerald-700">오늘 목표 현황</p>
-                  <h2 className="mt-1 text-2xl font-black text-slate-900">오늘 목표 / 현재 달성 수 / 달성률</h2>
-                  <p className="mt-2 text-lg text-slate-600">
+                  <p className="text-lg font-semibold text-knot-red">오늘 목표 현황</p>
+                  <h2 className="mt-1 text-[1.8rem] font-black leading-[1.18] text-knot-ink sm:text-2xl">오늘 목표 / 현재 달성 수 / 달성률</h2>
+                  <p className="mt-2 text-lg text-knot-brown">
                     {workerId === ""
                       ? "작업자를 선택하면 오늘 목표와 달성 현황이 표시됩니다."
                       : `${selectedWorker?.name ?? workerId} 작업자의 오늘 생산 진행 현황입니다.`}
                   </p>
                 </div>
-                <p className="text-4xl font-black text-slate-900">{goal?.percent ?? 0}%</p>
+                <p className="text-3xl font-black text-knot-ink sm:text-4xl">{goal?.percent ?? 0}%</p>
               </div>
 
               <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                <article className="rounded-2xl bg-white px-4 py-4 ring-1 ring-emerald-100">
-                  <p className="text-base font-semibold text-slate-500">오늘 목표</p>
-                  <p className="mt-2 text-2xl font-black text-slate-900">{goal?.target ?? 0}개</p>
+                <article className="rounded-[1rem] border border-knot-sand bg-white/92 px-4 py-4">
+                  <p className="text-base font-semibold text-knot-brown">오늘 목표</p>
+                  <p className="mt-2 text-2xl font-black text-knot-ink">{goal?.target ?? 0}개</p>
                 </article>
-                <article className="rounded-2xl bg-white px-4 py-4 ring-1 ring-emerald-100">
-                  <p className="text-base font-semibold text-slate-500">현재 달성 수</p>
+                <article className="rounded-[1rem] border border-knot-sand bg-white/92 px-4 py-4">
+                  <p className="text-base font-semibold text-knot-brown">현재 달성 수</p>
                   <p className="mt-2 text-2xl font-black text-pass">{goal?.achieved ?? 0}개</p>
                 </article>
-                <article className="rounded-2xl bg-white px-4 py-4 ring-1 ring-emerald-100">
-                  <p className="text-base font-semibold text-slate-500">상태</p>
-                  <p className="mt-2 text-2xl font-black text-slate-900">{goal?.reached ? "달성 완료" : "진행 중"}</p>
+                <article className="rounded-[1rem] border border-knot-sand bg-white/92 px-4 py-4">
+                  <p className="text-base font-semibold text-knot-brown">상태</p>
+                  <p className="mt-2 text-2xl font-black text-knot-ink">{goal?.reached ? "달성 완료" : "진행 중"}</p>
                 </article>
               </div>
 
@@ -529,33 +607,56 @@ export default function HomePage() {
                 <DailyGoalProgressBar percent={goal?.percent ?? 0} />
               </div>
 
-              {isGoalLoading ? <p className="mt-3 text-lg font-semibold text-slate-500">목표 정보를 불러오는 중입니다...</p> : null}
+              {isGoalLoading ? <p className="mt-3 text-lg font-semibold text-knot-brown">목표 정보를 불러오는 중입니다...</p> : null}
               {goalError ? <p className="mt-3 text-lg font-semibold text-fail">{goalError}</p> : null}
             </section>
 
-            <label className="space-y-3">
-              <span className="block text-lg font-bold text-slate-800 sm:text-xl">작업자 이름</span>
-              <select
-                value={workerId}
-                onChange={(event) => setWorkerId(event.target.value)}
-                className="min-h-16 w-full rounded-2xl border border-slate-300 bg-white px-5 py-4 text-lg text-slate-900 outline-none transition focus:border-slate-900 sm:text-xl"
-              >
-                <option value="">작업자를 선택하세요</option>
-                {WORKERS.map((workerOption) => (
-                  <option key={workerOption.id} value={workerOption.id}>
-                    {workerOption.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <section className="grid gap-5 lg:grid-cols-[1.05fr_1.1fr]">
+              <div className="space-y-5">
+                <label className="block rounded-[1.1rem] border border-knot-sand bg-white/90 p-4 shadow-card sm:p-5">
+                  <span className="block text-sm font-semibold text-knot-brown">1단계</span>
+                  <span className="mt-1 block text-xl font-black text-knot-ink sm:text-2xl">작업자 이름</span>
+                  <select
+                    value={workerId}
+                    onChange={(event) => setWorkerId(event.target.value)}
+                    className="mt-4 min-h-16 w-full rounded-[0.95rem] border border-knot-sand bg-knot-ivory px-5 py-4 text-lg text-knot-ink outline-none transition focus:border-knot-red sm:text-xl"
+                  >
+                    <option value="">작업자를 선택하세요</option>
+                    {WORKERS.map((workerOption) => (
+                      <option key={workerOption.id} value={workerOption.id}>
+                        {workerOption.name}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-3 text-base text-knot-brown">
+                    {selectedWorker
+                      ? `${selectedWorker.id} · ${selectedWorker.scoreReference}`
+                      : "선택한 작업자의 참고 정보가 여기에 표시됩니다."}
+                  </p>
+                </label>
 
-            <div className="space-y-3">
-              <h2 className="text-lg font-bold text-slate-800 sm:text-xl">매듭 종류</h2>
-              <KnotSelector selectedKnot={selectedKnot} onSelect={setSelectedKnot} />
-            </div>
+                <div className="rounded-[1.1rem] border border-knot-sand bg-white/90 p-4 shadow-card sm:p-5">
+                  <p className="text-sm font-semibold text-knot-brown">2단계</p>
+                  <h2 className="mt-1 text-xl font-black text-knot-ink sm:text-2xl">매듭 종류 선택</h2>
+                  <p className="mt-2 text-base text-knot-brown">현재 검사할 매듭 종류를 선택해 주세요.</p>
+                  <div className="mt-4">
+                    <KnotSelector selectedKnot={selectedKnot} onSelect={setSelectedKnot} />
+                  </div>
+                </div>
+              </div>
 
-            <div className="space-y-4 rounded-[2rem] border border-slate-200 bg-slate-50 p-4 md:p-5">
-              <div className="overflow-hidden rounded-[1.5rem] bg-slate-900">
+              <div className="space-y-4 rounded-[1.1rem] border border-knot-sand bg-white/90 p-4 shadow-card md:p-5">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-semibold text-knot-brown">3단계</p>
+                    <h2 className="mt-1 text-xl font-black text-knot-ink sm:text-2xl">촬영 및 확인</h2>
+                  </div>
+                  <span className="inline-flex rounded-full bg-knot-paper px-3 py-1 text-sm font-semibold text-knot-brown">
+                    {capturedImage ? "촬영 완료" : "촬영 대기"}
+                  </span>
+                </div>
+
+                <div className="overflow-hidden rounded-[1rem] bg-knot-ink">
                 {capturedImage ? (
                   <img
                     src={capturedImage}
@@ -566,16 +667,20 @@ export default function HomePage() {
                   <div className="relative h-[260px] sm:h-[320px] md:h-[420px]">
                     <video ref={videoRef} muted playsInline className="h-full w-full object-cover" />
                     {!isCameraReady ? (
-                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-slate-900/75 px-6 text-center text-white">
+                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-knot-ink/80 px-6 text-center text-white">
                         {isCameraStarting ? (
                           <>
-                            <span className="h-8 w-8 animate-spin rounded-full border-4 border-white/40 border-t-white" />
+                            <span className="knot-spinner" aria-hidden="true">
+                              <svg viewBox="0 0 48 48">
+                                <circle cx="24" cy="24" r="18" />
+                              </svg>
+                            </span>
                             <p className="text-xl font-bold">카메라를 준비하고 있습니다...</p>
                           </>
                         ) : (
                           <>
                             <p className="text-2xl font-bold">카메라 연결이 필요합니다</p>
-                            <p className="text-lg text-slate-200">
+                            <p className="text-lg text-white/80">
                               카메라 권한을 허용하면 실시간 촬영 화면이 표시됩니다.
                             </p>
                           </>
@@ -593,7 +698,7 @@ export default function HomePage() {
                   <button
                     type="button"
                     onClick={() => void startCamera()}
-                    className="min-h-16 flex-1 rounded-2xl border border-slate-300 bg-white px-6 py-4 text-xl font-bold text-slate-800 transition hover:border-slate-900"
+                    className="soft-press min-h-16 flex-1 rounded-[0.95rem] border border-knot-sand bg-knot-ivory px-6 py-4 text-xl font-bold text-knot-ink hover:border-knot-red/40"
                   >
                     재촬영
                   </button>
@@ -602,7 +707,7 @@ export default function HomePage() {
                     type="button"
                     onClick={handleCapturePhoto}
                     disabled={!isCameraReady || isCameraStarting}
-                    className="min-h-16 flex-1 rounded-2xl bg-slate-900 px-6 py-4 text-xl font-bold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500"
+                    className="soft-press min-h-16 flex-1 rounded-[0.95rem] bg-knot-red px-6 py-4 text-xl font-bold text-white hover:bg-[#b34134] disabled:cursor-not-allowed disabled:bg-knot-sand disabled:text-knot-brown"
                   >
                     사진 촬영
                   </button>
@@ -612,30 +717,35 @@ export default function HomePage() {
                   type="button"
                   onClick={() => void startCamera()}
                   disabled={isCameraStarting}
-                  className="min-h-16 flex-1 rounded-2xl border border-slate-300 bg-white px-6 py-4 text-xl font-bold text-slate-800 transition hover:border-slate-900 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+                  className="soft-press min-h-16 flex-1 rounded-[0.95rem] border border-knot-sand bg-white px-6 py-4 text-xl font-bold text-knot-ink hover:border-knot-red/40 disabled:cursor-not-allowed disabled:bg-knot-mist disabled:text-knot-brown/60"
                 >
                   카메라 다시 연결
                 </button>
               </div>
 
-              <div className="space-y-1 text-lg text-slate-600">
-                <p className="font-semibold text-slate-800">
+              <div className="rounded-[1rem] bg-knot-ivory px-4 py-4 text-lg text-knot-brown">
+                <p className="font-semibold text-knot-ink">
                   {capturedImage ? "촬영이 완료되었습니다. 검사 시작 버튼을 눌러주세요." : "실시간 카메라 화면에서 매듭을 중앙에 맞춰주세요."}
                 </p>
                 {cameraError ? <p className="font-semibold text-fail">{cameraError}</p> : null}
               </div>
-            </div>
+              </div>
+            </section>
 
-            <div className="sticky bottom-0 -mx-4 mt-auto border-t border-slate-200 bg-white/95 px-4 pb-1 pt-4 backdrop-blur sm:-mx-5 sm:px-5 md:static md:mx-0 md:border-t-0 md:bg-transparent md:px-0 md:pb-0 md:pt-0">
+            <div className="sticky bottom-0 -mx-4 mt-auto border-t border-knot-sand/70 bg-knot-ivory/95 px-4 pb-1 pt-4 backdrop-blur sm:-mx-5 sm:px-5 md:static md:mx-0 md:border-t-0 md:bg-transparent md:px-0 md:pb-0 md:pt-0">
               <button
                 type="button"
                 onClick={handleInspect}
                 disabled={!canStart}
-                className="flex min-h-16 w-full items-center justify-center gap-3 rounded-2xl bg-slate-900 px-8 py-4 text-xl font-bold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500"
+                className="soft-press flex min-h-16 w-full items-center justify-center gap-3 rounded-[1rem] bg-knot-ink px-8 py-4 text-xl font-bold text-white hover:bg-knot-brown disabled:cursor-not-allowed disabled:bg-knot-sand disabled:text-knot-brown"
               >
                 {isLoading ? (
                   <>
-                    <span className="h-7 w-7 animate-spin rounded-full border-4 border-white/40 border-t-white" />
+                    <span className="knot-spinner" aria-hidden="true">
+                      <svg viewBox="0 0 48 48">
+                        <circle cx="24" cy="24" r="18" />
+                      </svg>
+                    </span>
                     검사 중...
                   </>
                 ) : (
@@ -646,19 +756,19 @@ export default function HomePage() {
           </section>
         )}
 
-        <div className="mt-4 flex flex-wrap justify-end gap-4 sm:mt-6">
-          <Link href="/attendance" className="text-base font-semibold text-slate-500 underline-offset-4 hover:underline">
+        <div className="mt-4 hidden flex-wrap justify-end gap-4 md:flex md:mt-6">
+          <Link href="/attendance" className="text-base font-semibold text-knot-brown underline-offset-4 hover:text-knot-red hover:underline">
             출퇴근 기록
           </Link>
-          <Link href="/guides" className="text-base font-semibold text-slate-500 underline-offset-4 hover:underline">
+          <Link href="/guides" className="text-base font-semibold text-knot-brown underline-offset-4 hover:text-knot-red hover:underline">
             가이드
           </Link>
-          <Link href="/reports" className="text-base font-semibold text-slate-500 underline-offset-4 hover:underline">
+          <Link href="/reports" className="text-base font-semibold text-knot-brown underline-offset-4 hover:text-knot-red hover:underline">
             신고
           </Link>
           <Link
             href={workerId ? `/notices?workerId=${workerId}` : "/notices"}
-            className="inline-flex items-center gap-2 text-base font-semibold text-slate-500 underline-offset-4 hover:underline"
+            className="inline-flex items-center gap-2 text-base font-semibold text-knot-brown underline-offset-4 hover:text-knot-red hover:underline"
           >
             공지
             {workerId !== "" && unreadNoticeCount > 0 ? (
@@ -669,12 +779,12 @@ export default function HomePage() {
           </Link>
           <Link
             href="/settings"
-            className="inline-flex items-center gap-2 text-base font-semibold text-slate-500 underline-offset-4 hover:underline"
+            className="inline-flex items-center gap-2 text-base font-semibold text-knot-brown underline-offset-4 hover:text-knot-red hover:underline"
           >
             {voiceSettings.enabled ? <SpeakerIcon className="h-5 w-5" /> : null}
             설정
           </Link>
-          <Link href="/admin" className="text-base font-semibold text-slate-500 underline-offset-4 hover:underline">
+          <Link href="/admin" className="text-base font-semibold text-knot-brown underline-offset-4 hover:text-knot-red hover:underline">
             관리자
           </Link>
         </div>

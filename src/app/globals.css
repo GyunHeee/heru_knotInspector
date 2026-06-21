@@ -1,9 +1,22 @@
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable.css");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
   color-scheme: light;
+  --knot-ivory: #faf7f2;
+  --knot-paper: #f3eee6;
+  --knot-sand: #e5d8c7;
+  --knot-red: #c84b3c;
+  --knot-red-soft: #e9c8c1;
+  --knot-gold: #c9a86a;
+  --knot-ink: #2b2825;
+  --knot-brown: #6f5b4b;
+  --knot-mist: #f6f1e8;
+  --pass: #3d8b5f;
+  --fail: #c0392b;
 }
 
 * {
@@ -12,14 +25,19 @@
 
 html {
   font-size: 18px;
+  scroll-behavior: smooth;
 }
 
 body {
   margin: 0;
   min-height: 100vh;
-  background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
-  color: #0f172a;
+  background:
+    radial-gradient(circle at top left, rgba(201, 168, 106, 0.18), transparent 28%),
+    radial-gradient(circle at top right, rgba(200, 75, 60, 0.08), transparent 22%),
+    linear-gradient(180deg, var(--knot-ivory) 0%, #f7f2ea 100%);
+  color: var(--knot-ink);
   font-family: "Pretendard Variable", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  line-height: 1.6;
 }
 
 a {
@@ -32,6 +50,14 @@ select {
   font: inherit;
 }
 
+button {
+  transform: translateZ(0);
+}
+
+::selection {
+  background: rgba(200, 75, 60, 0.18);
+  color: var(--knot-ink);
+}
 
 @keyframes goal-burst-float {
   0% {
@@ -52,6 +78,100 @@ select {
   }
 }
 
+@keyframes result-appear {
+  0% {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes knot-spinner-rotate {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes knot-spinner-dash {
+  0% {
+    stroke-dasharray: 12 120;
+    stroke-dashoffset: 0;
+  }
+  50% {
+    stroke-dasharray: 60 120;
+    stroke-dashoffset: -18;
+  }
+  100% {
+    stroke-dasharray: 12 120;
+    stroke-dashoffset: -92;
+  }
+}
+
 .goal-burst {
   animation: goal-burst-float 2.6s ease-out forwards;
+}
+
+.result-appear {
+  animation: result-appear 260ms ease-out;
+}
+
+.soft-press {
+  transition:
+    transform 150ms ease,
+    box-shadow 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease,
+    color 180ms ease;
+}
+
+.soft-press:active {
+  transform: scale(0.97);
+}
+
+.knot-panel {
+  border: 1px solid rgba(111, 91, 75, 0.14);
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 12px 40px rgba(111, 91, 75, 0.08);
+  backdrop-filter: blur(14px);
+}
+
+.knot-pill {
+  border: 1px solid rgba(200, 75, 60, 0.18);
+  background: rgba(233, 200, 193, 0.32);
+  color: var(--knot-red);
+}
+
+.knot-spinner {
+  display: inline-block;
+  height: 2.5rem;
+  width: 2.5rem;
+  animation: knot-spinner-rotate 1.15s linear infinite;
+}
+
+.knot-spinner svg {
+  height: 100%;
+  width: 100%;
+}
+
+.knot-spinner circle {
+  fill: none;
+  stroke: var(--knot-red);
+  stroke-linecap: round;
+  stroke-width: 6;
+  animation: knot-spinner-dash 1.5s ease-in-out infinite;
+}
+
+.knot-result-pass {
+  background:
+    radial-gradient(circle at 30% 30%, rgba(61, 139, 95, 0.22), transparent 44%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(225, 241, 231, 0.92));
+}
+
+.knot-result-fail {
+  background:
+    radial-gradient(circle at 30% 30%, rgba(192, 57, 43, 0.22), transparent 44%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 232, 230, 0.94));
 }
