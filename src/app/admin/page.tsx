@@ -1,4 +1,5 @@
 import Link from "next/link"
+import AdminLogoutButton from "@/components/AdminLogoutButton"
 import HistoryTable from "@/components/HistoryTable"
 import ResponsiveMenu from "@/components/ResponsiveMenu"
 import { getHistorySummary, MOCK_HISTORY } from "@/lib/mockHistory"
@@ -40,8 +41,9 @@ export default function AdminPage() {
               </p>
             </div>
 
-            <div className="flex justify-end md:hidden">
+            <div className="flex justify-end gap-3 md:hidden">
               <ResponsiveMenu links={adminLinks} title="관리자 메뉴" />
+              <AdminLogoutButton />
             </div>
 
             <div className="hidden flex-wrap gap-3 md:flex lg:max-w-xl lg:justify-end">
@@ -54,6 +56,7 @@ export default function AdminPage() {
                   {link.label}
                 </Link>
               ))}
+              <AdminLogoutButton />
             </div>
           </div>
         </section>

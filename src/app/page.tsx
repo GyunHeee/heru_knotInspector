@@ -30,6 +30,7 @@ export default function HomePage() {
   const [isGoalLoading, setIsGoalLoading] = useState(false)
   const [showCelebration, setShowCelebration] = useState(false)
   const [unreadNoticeCount, setUnreadNoticeCount] = useState(0)
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false)
   const [voiceSettings, setVoiceSettings] = useState<VoiceSettings>(DEFAULT_VOICE_SETTINGS)
   const [breakReminderSettings, setBreakReminderSettings] = useState<BreakReminderSettings>(DEFAULT_BREAK_REMINDER_SETTINGS)
   const [isWorking, setIsWorking] = useState(false)
@@ -63,13 +64,27 @@ export default function HomePage() {
     { number: "2", title: "매듭 종류 선택", complete: selectedKnot !== "" },
     { number: "3", title: "촬영 준비", complete: capturedImage !== null },
   ] as const
+  const showKnotStep = workerId !== ""
+  const showCameraStep = selectedKnot !== ""
+  const visibleSteps = inspectionSteps.filter((step) => {
+    if (step.number === "1") {
+      return true
+    }
+
+    if (step.number === "2") {
+      return showKnotStep
+    }
+
+    return showCameraStep
+  })
+  const currentStepTitle = !showKnotStep ? "1단계 작업자 선택" : !showCameraStep ? "2단계 매듭 종류 선택" : "3단계 촬영 및 검사"
   const quickLinks = [
     { href: "/attendance", label: "출퇴근 기록" },
     { href: "/guides", label: "가이드" },
     { href: "/reports", label: "신고" },
     { href: workerId ? `/notices?workerId=${workerId}` : "/notices", label: "공지", badgeCount: unreadNoticeCount },
     { href: "/settings", label: "설정" },
-    { href: "/admin", label: "관리자" },
+    { href: isAdminAuthenticated ? "/admin" : "/admin/login", label: isAdminAuthenticated ? "관리자" : "관리자 로그인" },
   ]
 
   useEffect(() => {
@@ -87,6 +102,31 @@ export default function HomePage() {
 
     return () => {
       window.removeEventListener("storage", handleStorage)
+    }
+  }, [])
+
+  useEffect(() => {
+    let ignore = false
+
+    const loadAdminSession = async () => {
+      try {
+        const response = await fetch("/api/admin/session", { cache: "no-store" })
+        const payload = (await response.json()) as { isAuthenticated?: boolean }
+
+        if (!ignore) {
+          setIsAdminAuthenticated(payload.isAuthenticated === true)
+        }
+      } catch {
+        if (!ignore) {
+          setIsAdminAuthenticated(false)
+        }
+      }
+    }
+
+    void loadAdminSession()
+
+    return () => {
+      ignore = true
     }
   }, [])
 
@@ -546,11 +586,14 @@ export default function HomePage() {
                   <p className="mt-2 hidden text-2xl font-black text-knot-ink sm:block">{todayLabel}</p>
                 </div>
               </div>
-              <div className="mt-5 grid gap-3 md:grid-cols-3">
-                {inspectionSteps.map((step) => (
+              <div className="mt-5 flex flex-wrap items-center gap-3">
+                <div className="rounded-full bg-knot-ink px-4 py-2 text-sm font-bold text-white">
+                  현재 단계 · {currentStepTitle}
+                </div>
+                {visibleSteps.map((step) => (
                   <article
                     key={step.number}
-                    className={`rounded-[1rem] border px-4 py-3.5 sm:py-4 ${
+                    className={`min-w-[150px] rounded-[1rem] border px-4 py-3.5 sm:py-4 ${
                       step.complete
                         ? "border-knot-red/20 bg-knot-red/10"
                         : "border-knot-sand bg-knot-paper/55"
@@ -611,125 +654,145 @@ export default function HomePage() {
               {goalError ? <p className="mt-3 text-lg font-semibold text-fail">{goalError}</p> : null}
             </section>
 
-            <section className="grid gap-5 lg:grid-cols-[1.05fr_1.1fr]">
-              <div className="space-y-5">
-                <label className="block rounded-[1.1rem] border border-knot-sand bg-white/90 p-4 shadow-card sm:p-5">
-                  <span className="block text-sm font-semibold text-knot-brown">1단계</span>
-                  <span className="mt-1 block text-xl font-black text-knot-ink sm:text-2xl">작업자 이름</span>
-                  <select
-                    value={workerId}
-                    onChange={(event) => setWorkerId(event.target.value)}
-                    className="mt-4 min-h-16 w-full rounded-[0.95rem] border border-knot-sand bg-knot-ivory px-5 py-4 text-lg text-knot-ink outline-none transition focus:border-knot-red sm:text-xl"
-                  >
-                    <option value="">작업자를 선택하세요</option>
-                    {WORKERS.map((workerOption) => (
-                      <option key={workerOption.id} value={workerOption.id}>
-                        {workerOption.name}
-                      </option>
-                    ))}
-                  </select>
-                  <p className="mt-3 text-base text-knot-brown">
-                    {selectedWorker
-                      ? `${selectedWorker.id} · ${selectedWorker.scoreReference}`
-                      : "선택한 작업자의 참고 정보가 여기에 표시됩니다."}
-                  </p>
-                </label>
+            <section className="space-y-5">
+              <label className="block rounded-[1.1rem] border border-knot-sand bg-white/90 p-4 shadow-card sm:p-5">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <div>
+                    <span className="block text-sm font-semibold text-knot-brown">1단계</span>
+                    <span className="mt-1 block text-xl font-black text-knot-ink sm:text-2xl">작업자 이름</span>
+                  </div>
+                  {workerId !== "" ? (
+                    <span className="inline-flex rounded-full bg-knot-red px-3 py-1 text-sm font-bold text-white">
+                      완료
+                    </span>
+                  ) : null}
+                </div>
+                <select
+                  value={workerId}
+                  onChange={(event) => setWorkerId(event.target.value)}
+                  className="min-h-16 w-full rounded-[0.95rem] border border-knot-sand bg-knot-ivory px-5 py-4 text-lg text-knot-ink outline-none transition focus:border-knot-red sm:text-xl"
+                >
+                  <option value="">작업자를 선택하세요</option>
+                  {WORKERS.map((workerOption) => (
+                    <option key={workerOption.id} value={workerOption.id}>
+                      {workerOption.name}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-3 text-base text-knot-brown">
+                  {selectedWorker
+                    ? `${selectedWorker.id} · ${selectedWorker.scoreReference}`
+                    : "선택한 작업자의 참고 정보가 여기에 표시됩니다."}
+                </p>
+              </label>
 
+              {showKnotStep ? (
                 <div className="rounded-[1.1rem] border border-knot-sand bg-white/90 p-4 shadow-card sm:p-5">
-                  <p className="text-sm font-semibold text-knot-brown">2단계</p>
-                  <h2 className="mt-1 text-xl font-black text-knot-ink sm:text-2xl">매듭 종류 선택</h2>
+                  <div className="mb-4 flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-knot-brown">2단계</p>
+                      <h2 className="mt-1 text-xl font-black text-knot-ink sm:text-2xl">매듭 종류 선택</h2>
+                    </div>
+                    {selectedKnot !== "" ? (
+                      <span className="inline-flex rounded-full bg-knot-red px-3 py-1 text-sm font-bold text-white">
+                        완료
+                      </span>
+                    ) : null}
+                  </div>
                   <p className="mt-2 text-base text-knot-brown">현재 검사할 매듭 종류를 선택해 주세요.</p>
                   <div className="mt-4">
                     <KnotSelector selectedKnot={selectedKnot} onSelect={setSelectedKnot} />
                   </div>
                 </div>
-              </div>
+              ) : null}
 
-              <div className="space-y-4 rounded-[1.1rem] border border-knot-sand bg-white/90 p-4 shadow-card md:p-5">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="text-sm font-semibold text-knot-brown">3단계</p>
-                    <h2 className="mt-1 text-xl font-black text-knot-ink sm:text-2xl">촬영 및 확인</h2>
+              {showCameraStep ? (
+                <div className="space-y-4 rounded-[1.1rem] border border-knot-sand bg-white/90 p-4 shadow-card md:p-5">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-semibold text-knot-brown">3단계</p>
+                      <h2 className="mt-1 text-xl font-black text-knot-ink sm:text-2xl">촬영 및 확인</h2>
+                    </div>
+                    <span className="inline-flex rounded-full bg-knot-paper px-3 py-1 text-sm font-semibold text-knot-brown">
+                      {capturedImage ? "촬영 완료" : "촬영 대기"}
+                    </span>
                   </div>
-                  <span className="inline-flex rounded-full bg-knot-paper px-3 py-1 text-sm font-semibold text-knot-brown">
-                    {capturedImage ? "촬영 완료" : "촬영 대기"}
-                  </span>
-                </div>
 
-                <div className="overflow-hidden rounded-[1rem] bg-knot-ink">
-                {capturedImage ? (
-                  <img
-                    src={capturedImage}
-                    alt="촬영된 매듭 사진"
-                    className="h-[260px] w-full object-cover sm:h-[320px] md:h-[420px]"
-                  />
-                ) : (
-                  <div className="relative h-[260px] sm:h-[320px] md:h-[420px]">
-                    <video ref={videoRef} muted playsInline className="h-full w-full object-cover" />
-                    {!isCameraReady ? (
-                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-knot-ink/80 px-6 text-center text-white">
-                        {isCameraStarting ? (
-                          <>
-                            <span className="knot-spinner" aria-hidden="true">
-                              <svg viewBox="0 0 48 48">
-                                <circle cx="24" cy="24" r="18" />
-                              </svg>
-                            </span>
-                            <p className="text-xl font-bold">카메라를 준비하고 있습니다...</p>
-                          </>
-                        ) : (
-                          <>
-                            <p className="text-2xl font-bold">카메라 연결이 필요합니다</p>
-                            <p className="text-lg text-white/80">
-                              카메라 권한을 허용하면 실시간 촬영 화면이 표시됩니다.
-                            </p>
-                          </>
-                        )}
+                  <div className="overflow-hidden rounded-[1rem] bg-knot-ink">
+                    {capturedImage ? (
+                      <img
+                        src={capturedImage}
+                        alt="촬영된 매듭 사진"
+                        className="h-[260px] w-full object-cover sm:h-[320px] md:h-[420px]"
+                      />
+                    ) : (
+                      <div className="relative h-[260px] sm:h-[320px] md:h-[420px]">
+                        <video ref={videoRef} muted playsInline className="h-full w-full object-cover" />
+                        {!isCameraReady ? (
+                          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-knot-ink/80 px-6 text-center text-white">
+                            {isCameraStarting ? (
+                              <>
+                                <span className="knot-spinner" aria-hidden="true">
+                                  <svg viewBox="0 0 48 48">
+                                    <circle cx="24" cy="24" r="18" />
+                                  </svg>
+                                </span>
+                                <p className="text-xl font-bold">카메라를 준비하고 있습니다...</p>
+                              </>
+                            ) : (
+                              <>
+                                <p className="text-2xl font-bold">카메라 연결이 필요합니다</p>
+                                <p className="text-lg text-white/80">
+                                  카메라 권한을 허용하면 실시간 촬영 화면이 표시됩니다.
+                                </p>
+                              </>
+                            )}
+                          </div>
+                        ) : null}
                       </div>
-                    ) : null}
+                    )}
                   </div>
-                )}
-              </div>
 
-              <canvas ref={canvasRef} className="hidden" />
+                  <canvas ref={canvasRef} className="hidden" />
 
-              <div className="grid gap-3 lg:grid-cols-2">
-                {capturedImage ? (
-                  <button
-                    type="button"
-                    onClick={() => void startCamera()}
-                    className="soft-press min-h-16 flex-1 rounded-[0.95rem] border border-knot-sand bg-knot-ivory px-6 py-4 text-xl font-bold text-knot-ink hover:border-knot-red/40"
-                  >
-                    재촬영
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={handleCapturePhoto}
-                    disabled={!isCameraReady || isCameraStarting}
-                    className="soft-press min-h-16 flex-1 rounded-[0.95rem] bg-knot-red px-6 py-4 text-xl font-bold text-white hover:bg-[#b34134] disabled:cursor-not-allowed disabled:bg-knot-sand disabled:text-knot-brown"
-                  >
-                    사진 촬영
-                  </button>
-                )}
+                  <div className="grid gap-3 lg:grid-cols-2">
+                    {capturedImage ? (
+                      <button
+                        type="button"
+                        onClick={() => void startCamera()}
+                        className="soft-press min-h-16 flex-1 rounded-[0.95rem] border border-knot-sand bg-knot-ivory px-6 py-4 text-xl font-bold text-knot-ink hover:border-knot-red/40"
+                      >
+                        재촬영
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleCapturePhoto}
+                        disabled={!isCameraReady || isCameraStarting}
+                        className="soft-press min-h-16 flex-1 rounded-[0.95rem] bg-knot-red px-6 py-4 text-xl font-bold text-white hover:bg-[#b34134] disabled:cursor-not-allowed disabled:bg-knot-sand disabled:text-knot-brown"
+                      >
+                        사진 촬영
+                      </button>
+                    )}
 
-                <button
-                  type="button"
-                  onClick={() => void startCamera()}
-                  disabled={isCameraStarting}
-                  className="soft-press min-h-16 flex-1 rounded-[0.95rem] border border-knot-sand bg-white px-6 py-4 text-xl font-bold text-knot-ink hover:border-knot-red/40 disabled:cursor-not-allowed disabled:bg-knot-mist disabled:text-knot-brown/60"
-                >
-                  카메라 다시 연결
-                </button>
-              </div>
+                    <button
+                      type="button"
+                      onClick={() => void startCamera()}
+                      disabled={isCameraStarting}
+                      className="soft-press min-h-16 flex-1 rounded-[0.95rem] border border-knot-sand bg-white px-6 py-4 text-xl font-bold text-knot-ink hover:border-knot-red/40 disabled:cursor-not-allowed disabled:bg-knot-mist disabled:text-knot-brown/60"
+                    >
+                      카메라 다시 연결
+                    </button>
+                  </div>
 
-              <div className="rounded-[1rem] bg-knot-ivory px-4 py-4 text-lg text-knot-brown">
-                <p className="font-semibold text-knot-ink">
-                  {capturedImage ? "촬영이 완료되었습니다. 검사 시작 버튼을 눌러주세요." : "실시간 카메라 화면에서 매듭을 중앙에 맞춰주세요."}
-                </p>
-                {cameraError ? <p className="font-semibold text-fail">{cameraError}</p> : null}
-              </div>
-              </div>
+                  <div className="rounded-[1rem] bg-knot-ivory px-4 py-4 text-lg text-knot-brown">
+                    <p className="font-semibold text-knot-ink">
+                      {capturedImage ? "촬영이 완료되었습니다. 검사 시작 버튼을 눌러주세요." : "실시간 카메라 화면에서 매듭을 중앙에 맞춰주세요."}
+                    </p>
+                    {cameraError ? <p className="font-semibold text-fail">{cameraError}</p> : null}
+                  </div>
+                </div>
+              ) : null}
             </section>
 
             <div className="sticky bottom-0 -mx-4 mt-auto border-t border-knot-sand/70 bg-knot-ivory/95 px-4 pb-1 pt-4 backdrop-blur sm:-mx-5 sm:px-5 md:static md:mx-0 md:border-t-0 md:bg-transparent md:px-0 md:pb-0 md:pt-0">
@@ -784,8 +847,11 @@ export default function HomePage() {
             {voiceSettings.enabled ? <SpeakerIcon className="h-5 w-5" /> : null}
             설정
           </Link>
-          <Link href="/admin" className="text-base font-semibold text-knot-brown underline-offset-4 hover:text-knot-red hover:underline">
-            관리자
+          <Link
+            href={isAdminAuthenticated ? "/admin" : "/admin/login"}
+            className="text-base font-semibold text-knot-brown underline-offset-4 hover:text-knot-red hover:underline"
+          >
+            {isAdminAuthenticated ? "관리자" : "관리자 로그인"}
           </Link>
         </div>
       </div>
