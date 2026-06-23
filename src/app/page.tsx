@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
 import BreakReminderDialog from "@/components/BreakReminderDialog"
+import AdminLogoutButton from "@/components/AdminLogoutButton"
 import DailyGoalProgressBar from "@/components/DailyGoalProgressBar"
 import ResponsiveMenu from "@/components/ResponsiveMenu"
 import SpeakerIcon from "@/components/SpeakerIcon"
@@ -84,7 +85,6 @@ export default function HomePage() {
     { href: "/reports", label: "신고" },
     { href: workerId ? `/notices?workerId=${workerId}` : "/notices", label: "공지", badgeCount: unreadNoticeCount },
     { href: "/settings", label: "설정" },
-    { href: isAdminAuthenticated ? "/admin" : "/admin/login", label: isAdminAuthenticated ? "관리자" : "관리자 로그인" },
   ]
 
   useEffect(() => {
@@ -516,8 +516,28 @@ export default function HomePage() {
       ) : null}
 
       <div className="knot-panel mx-auto flex min-h-[calc(100vh-1.5rem)] w-full max-w-6xl flex-col overflow-hidden rounded-[1.25rem] p-3 sm:min-h-[calc(100vh-2rem)] sm:p-5 md:p-8 lg:min-h-[calc(100vh-3rem)] lg:p-10">
-        <div className="mb-4 flex justify-end md:hidden">
-          <ResponsiveMenu links={quickLinks} title="검사 메뉴" />
+        <div className="mb-4 flex items-center justify-between gap-3 md:hidden">
+          <div className="flex items-center gap-2">
+            {isAdminAuthenticated ? (
+              <>
+                <Link
+                  href="/admin"
+                  className="soft-press inline-flex min-h-12 items-center justify-center rounded-[0.95rem] border border-knot-red/20 bg-knot-red/10 px-4 py-2 text-sm font-bold text-knot-red"
+                >
+                  관리자 센터
+                </Link>
+                <AdminLogoutButton />
+              </>
+            ) : (
+              <Link
+                href="/admin/login"
+                className="soft-press inline-flex min-h-12 items-center justify-center rounded-[0.95rem] border border-knot-red/20 bg-knot-red/10 px-4 py-2 text-sm font-bold text-knot-red"
+              >
+                관리자 로그인
+              </Link>
+            )}
+          </div>
+          <ResponsiveMenu links={quickLinks} title="작업자 메뉴" />
         </div>
         {isResultView && result ? (
           <section className="result-appear flex flex-1 flex-col items-center justify-center gap-6 py-3 text-center sm:gap-8">
@@ -819,7 +839,7 @@ export default function HomePage() {
           </section>
         )}
 
-        <div className="mt-4 hidden flex-wrap justify-end gap-4 md:flex md:mt-6">
+        <div className="mt-4 hidden flex-wrap items-center justify-end gap-4 md:flex md:mt-6">
           <Link href="/attendance" className="text-base font-semibold text-knot-brown underline-offset-4 hover:text-knot-red hover:underline">
             출퇴근 기록
           </Link>
@@ -847,12 +867,25 @@ export default function HomePage() {
             {voiceSettings.enabled ? <SpeakerIcon className="h-5 w-5" /> : null}
             설정
           </Link>
-          <Link
-            href={isAdminAuthenticated ? "/admin" : "/admin/login"}
-            className="text-base font-semibold text-knot-brown underline-offset-4 hover:text-knot-red hover:underline"
-          >
-            {isAdminAuthenticated ? "관리자" : "관리자 로그인"}
-          </Link>
+          <div className="ml-2 h-5 w-px bg-knot-sand" />
+          {isAdminAuthenticated ? (
+            <>
+              <Link
+                href="/admin"
+                className="text-base font-semibold text-knot-red underline-offset-4 hover:underline"
+              >
+                관리자 센터
+              </Link>
+              <AdminLogoutButton />
+            </>
+          ) : (
+            <Link
+              href="/admin/login"
+              className="text-base font-semibold text-knot-red underline-offset-4 hover:underline"
+            >
+              관리자 로그인
+            </Link>
+          )}
         </div>
       </div>
     </main>

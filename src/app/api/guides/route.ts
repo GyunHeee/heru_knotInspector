@@ -1,7 +1,9 @@
 import { mkdir, writeFile } from "node:fs/promises"
 import path from "node:path"
+import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 import { createGuide, isGuidesDbConfigured, updateGuide } from "@/lib/guides"
+import { ADMIN_SESSION_COOKIE, isAdminAuthenticatedFromCookie } from "@/lib/adminAuth"
 import { getGuideSlug, isGuideKnotType, type KnotGuideType } from "@/lib/guidesShared"
 
 export const runtime = "nodejs"
@@ -27,6 +29,13 @@ async function saveUploadedImage(file: File, knotType: KnotGuideType, step: numb
 
 // 관리자 가이드 등록과 수정을 처리하는 API 라우트입니다.
 export async function POST(request: Request) {
+  const cookieStore = cookies()
+  const isAuthenticated = isAdminAuthenticatedFromCookie(cookieStore.get(ADMIN_SESSION_COOKIE)?.value)
+
+  if (!isAuthenticated) {
+    return NextResponse.json({ error: "관리자 로그인이 필요합니다." }, { status: 401 })
+  }
+
   if (!isGuidesDbConfigured()) {
     return NextResponse.json(
       { error: "DB 연결 정보가 없습니다. DATABASE_URL 또는 POSTGRES_URL을 설정해주세요." },
@@ -75,6 +84,13 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
+  const cookieStore = cookies()
+  const isAuthenticated = isAdminAuthenticatedFromCookie(cookieStore.get(ADMIN_SESSION_COOKIE)?.value)
+
+  if (!isAuthenticated) {
+    return NextResponse.json({ error: "관리자 로그인이 필요합니다." }, { status: 401 })
+  }
+
   if (!isGuidesDbConfigured()) {
     return NextResponse.json(
       { error: "DB 연결 정보가 없습니다. DATABASE_URL 또는 POSTGRES_URL을 설정해주세요." },

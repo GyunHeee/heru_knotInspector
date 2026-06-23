@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import type { ReportItem, ReportType } from "@/lib/reportsShared"
 import { REPORT_TYPE_OPTIONS } from "@/lib/reportsShared"
 import { WORKERS } from "@/lib/workers"
@@ -12,11 +12,37 @@ export default function ReportsClient() {
   const [isSubmittingType, setIsSubmittingType] = useState<ReportType | null>(null)
   const [submittedReport, setSubmittedReport] = useState<ReportItem | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false)
 
   const selectedWorkerName = useMemo(
     () => WORKERS.find((worker) => worker.id === workerId)?.name ?? "",
     [workerId],
   )
+
+  useEffect(() => {
+    let ignore = false
+
+    const loadAdminSession = async () => {
+      try {
+        const response = await fetch("/api/admin/session", { cache: "no-store" })
+        const payload = (await response.json()) as { isAuthenticated?: boolean }
+
+        if (!ignore) {
+          setIsAdminAuthenticated(payload.isAuthenticated === true)
+        }
+      } catch {
+        if (!ignore) {
+          setIsAdminAuthenticated(false)
+        }
+      }
+    }
+
+    void loadAdminSession()
+
+    return () => {
+      ignore = true
+    }
+  }, [])
 
   const handleReport = async (type: ReportType) => {
     if (!workerId) {
@@ -134,9 +160,11 @@ export default function ReportsClient() {
         <Link href="/" className="text-base font-semibold text-slate-500 underline-offset-4 hover:underline">
           검사 화면으로
         </Link>
-        <Link href="/admin/reports" className="text-base font-semibold text-slate-500 underline-offset-4 hover:underline">
-          관리자
-        </Link>
+        {isAdminAuthenticated ? (
+          <Link href="/admin/reports" className="text-base font-semibold text-slate-500 underline-offset-4 hover:underline">
+            관리자
+          </Link>
+        ) : null}
       </div>
     </section>
   )

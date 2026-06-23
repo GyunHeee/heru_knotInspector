@@ -5,7 +5,9 @@ import { ADMIN_SESSION_COOKIE, isAdminAuthenticatedFromCookie } from "./src/lib/
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  if (!pathname.startsWith("/admin") || pathname === "/admin/login") {
+  const requiresAdminAuth = pathname.startsWith("/admin") || pathname.startsWith("/attendance/admin")
+
+  if (!requiresAdminAuth || pathname === "/admin/login") {
     return NextResponse.next()
   }
 
@@ -20,5 +22,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: ["/admin/:path*", "/attendance/admin/:path*"],
 }

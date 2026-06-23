@@ -1,4 +1,6 @@
+import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
+import { ADMIN_SESSION_COOKIE, isAdminAuthenticatedFromCookie } from "@/lib/adminAuth"
 import { isReportsDbConfigured, updateReportStatus } from "@/lib/reports"
 import type { ReportStatus } from "@/lib/reportsShared"
 
@@ -8,6 +10,13 @@ type UpdateReportBody = {
 
 // 관리자 신고 상태를 갱신하는 API 라우트입니다.
 export async function PUT(request: Request, context: { params: { id: string } }) {
+  const cookieStore = cookies()
+  const isAuthenticated = isAdminAuthenticatedFromCookie(cookieStore.get(ADMIN_SESSION_COOKIE)?.value)
+
+  if (!isAuthenticated) {
+    return NextResponse.json({ error: "관리자 로그인이 필요합니다." }, { status: 401 })
+  }
+
   if (!isReportsDbConfigured()) {
     return NextResponse.json(
       { error: "DB 연결 정보가 없습니다. DATABASE_URL 또는 POSTGRES_URL을 설정해주세요." },

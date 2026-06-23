@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
   formatAttendanceDateTime,
   type AttendanceRecord,
@@ -16,8 +16,34 @@ export default function AttendancePage() {
   const [message, setMessage] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [savedRecord, setSavedRecord] = useState<AttendanceRecord | null>(null)
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false)
 
   const selectedWorker = getWorkerById(workerId)
+
+  useEffect(() => {
+    let ignore = false
+
+    const loadAdminSession = async () => {
+      try {
+        const response = await fetch("/api/admin/session", { cache: "no-store" })
+        const payload = (await response.json()) as { isAuthenticated?: boolean }
+
+        if (!ignore) {
+          setIsAdminAuthenticated(payload.isAuthenticated === true)
+        }
+      } catch {
+        if (!ignore) {
+          setIsAdminAuthenticated(false)
+        }
+      }
+    }
+
+    void loadAdminSession()
+
+    return () => {
+      ignore = true
+    }
+  }, [])
 
   const submitAttendance = async (type: AttendanceType) => {
     if (!workerId) {
@@ -131,9 +157,11 @@ export default function AttendancePage() {
         <div className="flex flex-col gap-3 text-lg text-slate-600 md:flex-row md:items-center md:justify-between">
           <p>버튼을 누르면 서버 시각 기준으로 기록됩니다.</p>
           <div className="flex gap-4">
-            <Link href="/attendance/admin" className="font-semibold text-slate-700 underline-offset-4 hover:underline">
-              출퇴근 관리자
-            </Link>
+            {isAdminAuthenticated ? (
+              <Link href="/attendance/admin" className="font-semibold text-slate-700 underline-offset-4 hover:underline">
+                출퇴근 관리자
+              </Link>
+            ) : null}
             <Link href="/" className="font-semibold text-slate-700 underline-offset-4 hover:underline">
               검사 화면
             </Link>
