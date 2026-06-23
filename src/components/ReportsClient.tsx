@@ -2,8 +2,10 @@
 
 import Link from "next/link"
 import { useEffect, useMemo, useState } from "react"
+import { ADMIN_SESSION_CHANGED_EVENT } from "@/lib/adminSessionClient"
 import type { ReportItem, ReportType } from "@/lib/reportsShared"
 import { REPORT_TYPE_OPTIONS } from "@/lib/reportsShared"
+import type { WorkerProfileWithStats } from "@/lib/workerProfilesShared"
 import { WORKERS } from "@/lib/workers"
 
 // 작업자가 큰 버튼으로 간단히 신고를 접수하는 화면입니다.
@@ -13,10 +15,11 @@ export default function ReportsClient() {
   const [submittedReport, setSubmittedReport] = useState<ReportItem | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false)
+  const [workerOptions, setWorkerOptions] = useState(WORKERS)
 
   const selectedWorkerName = useMemo(
-    () => WORKERS.find((worker) => worker.id === workerId)?.name ?? "",
-    [workerId],
+    () => workerOptions.find((worker) => worker.id === workerId)?.name ?? "",
+    [workerId, workerOptions],
   )
 
   useEffect(() => {
@@ -38,6 +41,53 @@ export default function ReportsClient() {
     }
 
     void loadAdminSession()
+
+    const handleAdminSessionChanged = () => {
+      void loadAdminSession()
+    }
+
+    window.addEventListener(ADMIN_SESSION_CHANGED_EVENT, handleAdminSessionChanged)
+
+    return () => {
+      ignore = true
+      window.removeEventListener(ADMIN_SESSION_CHANGED_EVENT, handleAdminSessionChanged)
+    }
+  }, [])
+
+  useEffect(() => {
+    let ignore = false
+
+    const loadWorkers = async () => {
+      try {
+        const response = await fetch("/api/workers", { cache: "no-store" })
+        const payload = (await response.json()) as {
+          workers?: WorkerProfileWithStats[]
+        }
+
+        if (!response.ok) {
+          throw new Error("작업자 목록을 불러오지 못했습니다.")
+        }
+
+        const activeWorkers =
+          payload.workers
+            ?.filter((worker) => worker.active)
+            .map((worker) => ({
+              id: worker.id,
+              name: worker.name,
+              scoreReference: `${worker.knotType} 담당`,
+            })) ?? []
+
+        if (!ignore && activeWorkers.length > 0) {
+          setWorkerOptions(activeWorkers)
+        }
+      } catch {
+        if (!ignore) {
+          setWorkerOptions(WORKERS)
+        }
+      }
+    }
+
+    void loadWorkers()
 
     return () => {
       ignore = true
@@ -126,7 +176,7 @@ export default function ReportsClient() {
           className="min-h-16 w-full rounded-2xl border border-slate-300 bg-white px-5 py-4 text-lg text-slate-900 outline-none transition focus:border-slate-900 sm:text-xl"
         >
           <option value="">작업자를 선택하세요</option>
-          {WORKERS.map((worker) => (
+          {workerOptions.map((worker) => (
             <option key={worker.id} value={worker.id}>
               {worker.name}
             </option>

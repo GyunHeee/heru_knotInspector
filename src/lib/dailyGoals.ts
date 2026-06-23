@@ -6,6 +6,7 @@ import {
   type DailyGoalInput,
   type DailyGoalProgress,
 } from "@/lib/dailyGoalsShared"
+import { getWorkerProfiles, isWorkerProfilesDbConfigured } from "@/lib/workerProfiles"
 import { WORKERS, getWorkerName } from "@/lib/workers"
 
 type DailyGoalRow = QueryResultRow & {
@@ -75,13 +76,20 @@ async function ensureDailyGoalsSchema() {
 }
 
 function mapRowToProgress(row: Pick<DailyGoalRow, "worker_id" | "date" | "target" | "achieved">): DailyGoalProgress {
+  return mapRowToProgressWithWorkerName(row, getWorkerName(row.worker_id))
+}
+
+function mapRowToProgressWithWorkerName(
+  row: Pick<DailyGoalRow, "worker_id" | "date" | "target" | "achieved">,
+  workerName: string,
+): DailyGoalProgress {
   const target = Number(row.target)
   const achieved = Number(row.achieved)
   const percent = calculateGoalPercent(target, achieved)
 
   return {
     workerId: row.worker_id,
-    workerName: getWorkerName(row.worker_id),
+    workerName,
     date: row.date,
     target,
     achieved,
@@ -102,12 +110,36 @@ function createEmptyProgress(workerId: string, date = getKstDateString()): Daily
   }
 }
 
+async function getGoalWorkers() {
+  if (!isWorkerProfilesDbConfigured()) {
+    return WORKERS.map((worker) => ({ id: worker.id, name: worker.name }))
+  }
+
+  const profiles = await getWorkerProfiles()
+  const activeProfiles = profiles
+    .filter((worker) => worker.active)
+    .map((worker) => ({ id: worker.id, name: worker.name }))
+
+  return activeProfiles.length > 0
+    ? activeProfiles
+    : WORKERS.map((worker) => ({ id: worker.id, name: worker.name }))
+}
+
+async function getGoalWorkerName(workerId: string) {
+  const workers = await getGoalWorkers()
+  return workers.find((worker) => worker.id === workerId)?.name ?? getWorkerName(workerId)
+}
+
 // 특정 작업자의 오늘 목표를 불러오는 함수입니다.
 export async function getTodayGoalByWorkerId(workerId: string) {
   const today = getKstDateString()
+  const workerName = await getGoalWorkerName(workerId)
 
   if (!isDailyGoalsDbConfigured()) {
-    return createEmptyProgress(workerId, today)
+    return {
+      ...createEmptyProgress(workerId, today),
+      workerName,
+    }
   }
 
   await ensureDailyGoalsSchema()
@@ -123,15 +155,19 @@ export async function getTodayGoalByWorkerId(workerId: string) {
   )
 
   const row = rows[0]
-  return row ? mapRowToProgress(row) : createEmptyProgress(workerId, today)
+  return row ? mapRowToProgressWithWorkerName(row, workerName) : { ...createEmptyProgress(workerId, today), workerName }
 }
 
 // 관리자 화면용 오늘 목표 현황을 작업자별로 불러오는 함수입니다.
 export async function getTodayGoalsOverview() {
   const today = getKstDateString()
+  const workers = await getGoalWorkers()
 
   if (!isDailyGoalsDbConfigured()) {
-    return WORKERS.map((worker) => createEmptyProgress(worker.id, today))
+    return workers.map((worker) => ({
+      ...createEmptyProgress(worker.id, today),
+      workerName: worker.name,
+    }))
   }
 
   await ensureDailyGoalsSchema()
@@ -145,9 +181,14 @@ export async function getTodayGoalsOverview() {
     [today],
   )
 
-  return WORKERS.map((worker) => {
+  return workers.map((worker) => {
     const row = rows.find((item) => item.worker_id === worker.id)
-    return row ? mapRowToProgress(row) : createEmptyProgress(worker.id, today)
+    return row
+      ? mapRowToProgressWithWorkerName(row, worker.name)
+      : {
+          ...createEmptyProgress(worker.id, today),
+          workerName: worker.name,
+        }
   })
 }
 
@@ -158,6 +199,7 @@ export async function getDailyGoalsHistory(limit = 20) {
   }
 
   await ensureDailyGoalsSchema()
+  const workers = await getGoalWorkers()
 
   const rows = await queryRows<DailyGoalRow>(
     `
@@ -171,7 +213,10 @@ export async function getDailyGoalsHistory(limit = 20) {
 
   return rows.map((row) => ({
     id: row.id,
-    ...mapRowToProgress(row),
+    ...mapRowToProgressWithWorkerName(
+      row,
+      workers.find((worker) => worker.id === row.worker_id)?.name ?? getWorkerName(row.worker_id),
+    ),
   }))
 }
 
@@ -199,7 +244,7 @@ export async function setDailyGoal(input: DailyGoalInput) {
     [input.workerId, today, input.target],
   )
 
-  return mapRowToProgress(rows[0])
+  return mapRowToProgressWithWorkerName(rows[0], await getGoalWorkerName(input.workerId))
 }
 
 // 검사 합격 시 오늘 달성 수량을 1 증가시키는 함수입니다.
@@ -222,5 +267,5 @@ export async function incrementDailyGoalAchieved(workerId: string) {
     [workerId, today],
   )
 
-  return mapRowToProgress(rows[0])
+  return mapRowToProgressWithWorkerName(rows[0], await getGoalWorkerName(workerId))
 }

@@ -7,6 +7,8 @@ import {
   type AttendanceRecord,
   type AttendanceType,
 } from "@/lib/attendanceShared"
+import { ADMIN_SESSION_CHANGED_EVENT } from "@/lib/adminSessionClient"
+import type { WorkerProfileWithStats } from "@/lib/workerProfilesShared"
 import { WORKERS, getWorkerById } from "@/lib/workers"
 
 // 작업자가 큰 버튼으로 출근과 퇴근을 남기는 출퇴근 메인 화면입니다.
@@ -17,8 +19,11 @@ export default function AttendancePage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [savedRecord, setSavedRecord] = useState<AttendanceRecord | null>(null)
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false)
+  const [workerOptions, setWorkerOptions] = useState(WORKERS)
 
-  const selectedWorker = getWorkerById(workerId)
+  const selectedWorker =
+    workerOptions.find((worker) => worker.id === workerId) ??
+    getWorkerById(workerId)
 
   useEffect(() => {
     let ignore = false
@@ -39,6 +44,53 @@ export default function AttendancePage() {
     }
 
     void loadAdminSession()
+
+    const handleAdminSessionChanged = () => {
+      void loadAdminSession()
+    }
+
+    window.addEventListener(ADMIN_SESSION_CHANGED_EVENT, handleAdminSessionChanged)
+
+    return () => {
+      ignore = true
+      window.removeEventListener(ADMIN_SESSION_CHANGED_EVENT, handleAdminSessionChanged)
+    }
+  }, [])
+
+  useEffect(() => {
+    let ignore = false
+
+    const loadWorkers = async () => {
+      try {
+        const response = await fetch("/api/workers", { cache: "no-store" })
+        const payload = (await response.json()) as {
+          workers?: WorkerProfileWithStats[]
+        }
+
+        if (!response.ok) {
+          throw new Error("작업자 목록을 불러오지 못했습니다.")
+        }
+
+        const activeWorkers =
+          payload.workers
+            ?.filter((worker) => worker.active)
+            .map((worker) => ({
+              id: worker.id,
+              name: worker.name,
+              scoreReference: `${worker.knotType} 담당`,
+            })) ?? []
+
+        if (!ignore && activeWorkers.length > 0) {
+          setWorkerOptions(activeWorkers)
+        }
+      } catch {
+        if (!ignore) {
+          setWorkerOptions(WORKERS)
+        }
+      }
+    }
+
+    void loadWorkers()
 
     return () => {
       ignore = true
@@ -102,7 +154,7 @@ export default function AttendancePage() {
             className="min-h-16 w-full rounded-2xl border border-slate-300 bg-white px-5 py-4 text-xl text-slate-900 outline-none transition focus:border-slate-900"
           >
             <option value="">작업자를 선택하세요</option>
-            {WORKERS.map((worker) => (
+            {workerOptions.map((worker) => (
               <option key={worker.id} value={worker.id}>
                 {worker.name} ({worker.id})
               </option>

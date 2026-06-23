@@ -1,6 +1,7 @@
 import Link from "next/link"
 import AttendanceHistoryTable from "@/components/AttendanceHistoryTable"
 import MonthlyAttendanceSummaryTable from "@/components/MonthlyAttendanceSummaryTable"
+import { requireAdminSession } from "@/lib/adminGuard"
 import { formatWorkMinutes } from "@/lib/attendanceShared"
 import { getAttendanceDashboardData } from "@/lib/attendance"
 
@@ -8,6 +9,7 @@ export const dynamic = "force-dynamic"
 
 // 관리자용 출퇴근 현황과 월별 총 근무 시간을 보여주는 화면입니다.
 export default async function AttendanceAdminPage() {
+  requireAdminSession()
   const dashboard = await getAttendanceDashboardData()
 
   return (

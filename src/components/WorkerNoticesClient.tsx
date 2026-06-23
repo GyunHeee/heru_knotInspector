@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import type { NoticeListResponse, NoticeSummary } from "@/lib/noticesShared"
+import type { WorkerProfileWithStats } from "@/lib/workerProfilesShared"
 import { WORKERS } from "@/lib/workers"
 
 type WorkerNoticesClientProps = {
@@ -12,11 +13,52 @@ type WorkerNoticesClientProps = {
 // 작업자가 공지 목록을 확인하고 읽지 않은 공지를 구분하는 화면입니다.
 export default function WorkerNoticesClient({ initialWorkerId }: WorkerNoticesClientProps) {
   const [workerId, setWorkerId] = useState(initialWorkerId)
+  const [workerOptions, setWorkerOptions] = useState(WORKERS)
   const [notices, setNotices] = useState<NoticeSummary[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [dbConfigured, setDbConfigured] = useState(true)
+
+  useEffect(() => {
+    let ignore = false
+
+    const loadWorkers = async () => {
+      try {
+        const response = await fetch("/api/workers", { cache: "no-store" })
+        const payload = (await response.json()) as {
+          workers?: WorkerProfileWithStats[]
+        }
+
+        if (!response.ok) {
+          throw new Error("작업자 목록을 불러오지 못했습니다.")
+        }
+
+        const activeWorkers =
+          payload.workers
+            ?.filter((worker) => worker.active)
+            .map((worker) => ({
+              id: worker.id,
+              name: worker.name,
+              scoreReference: `${worker.knotType} 담당`,
+            })) ?? []
+
+        if (!ignore && activeWorkers.length > 0) {
+          setWorkerOptions(activeWorkers)
+        }
+      } catch {
+        if (!ignore) {
+          setWorkerOptions(WORKERS)
+        }
+      }
+    }
+
+    void loadWorkers()
+
+    return () => {
+      ignore = true
+    }
+  }, [])
 
   useEffect(() => {
     let ignore = false
@@ -80,7 +122,7 @@ export default function WorkerNoticesClient({ initialWorkerId }: WorkerNoticesCl
             className="min-h-14 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-lg text-slate-900 outline-none transition focus:border-slate-900"
           >
             <option value="">작업자를 선택하세요</option>
-            {WORKERS.map((worker) => (
+            {workerOptions.map((worker) => (
               <option key={worker.id} value={worker.id}>
                 {worker.name}
               </option>

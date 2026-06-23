@@ -1,10 +1,12 @@
 import Link from "next/link"
 import AdminNoticesClient from "@/components/AdminNoticesClient"
+import { requireAdminSession } from "@/lib/adminGuard"
 import { isNoticesDbConfigured, listNotices } from "@/lib/notices"
 
 export const dynamic = "force-dynamic"
 
 export default async function AdminNoticesPage() {
+  requireAdminSession()
   const result = await listNotices()
 
   return (

@@ -2,6 +2,7 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import KnotTypeBadge from "@/components/KnotTypeBadge"
 import WorkerAvatar from "@/components/WorkerAvatar"
+import { requireAdminSession } from "@/lib/adminGuard"
 import { getWorkerProfileById } from "@/lib/workerProfiles"
 
 type WorkerDetailPageProps = {
@@ -12,6 +13,7 @@ type WorkerDetailPageProps = {
 
 // 작업자 상세 정보와 누적 생산 통계를 보여주는 화면입니다.
 export default async function WorkerDetailPage({ params }: WorkerDetailPageProps) {
+  requireAdminSession()
   const worker = await getWorkerProfileById(params.id)
 
   if (!worker) {

@@ -1,11 +1,13 @@
 import Link from "next/link"
 import WorkersAdminClient from "@/components/WorkersAdminClient"
+import { requireAdminSession } from "@/lib/adminGuard"
 import { getWorkerProfiles, isWorkerProfilesDbConfigured } from "@/lib/workerProfiles"
 
 export const dynamic = "force-dynamic"
 
 // 작업자 등록과 목록 관리를 담당하는 관리자 화면입니다.
 export default async function WorkersAdminPage() {
+  requireAdminSession()
   const dbConfigured = isWorkerProfilesDbConfigured()
   const workers = await getWorkerProfiles()
 

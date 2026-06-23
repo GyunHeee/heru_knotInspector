@@ -1,10 +1,12 @@
 import Link from "next/link"
 import DailyGoalsAdminClient from "@/components/DailyGoalsAdminClient"
+import { requireAdminSession } from "@/lib/adminGuard"
 import { getDailyGoalsHistory, getTodayGoalsOverview, isDailyGoalsDbConfigured } from "@/lib/dailyGoals"
 
 export const dynamic = "force-dynamic"
 
 export default async function AdminGoalsPage() {
+  requireAdminSession()
   const [goals, history] = await Promise.all([getTodayGoalsOverview(), getDailyGoalsHistory(20)])
 
   return (

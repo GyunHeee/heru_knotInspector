@@ -9,9 +9,11 @@ import ResponsiveMenu from "@/components/ResponsiveMenu"
 import SpeakerIcon from "@/components/SpeakerIcon"
 import KnotSelector from "@/components/KnotSelector"
 import ResultCard from "@/components/ResultCard"
+import { ADMIN_SESSION_CHANGED_EVENT } from "@/lib/adminSessionClient"
 import type { DailyGoalProgress } from "@/lib/dailyGoalsShared"
 import type { NoticeListResponse } from "@/lib/noticesShared"
 import { analyzeKnot, type KnotResult } from "@/lib/mockAnalyzer"
+import type { WorkerProfileWithStats } from "@/lib/workerProfilesShared"
 import { getWorkerById, WORKERS } from "@/lib/workers"
 import { DEFAULT_VOICE_SETTINGS, loadVoiceSettings, speakKorean, type VoiceSettings } from "@/lib/voiceSettings"
 import { DEFAULT_BREAK_REMINDER_SETTINGS, loadBreakReminderSettings, type BreakReminderSettings } from "@/lib/breakReminderSettings"
@@ -29,6 +31,7 @@ export default function HomePage() {
   const [goal, setGoal] = useState<DailyGoalProgress | null>(null)
   const [goalError, setGoalError] = useState<string | null>(null)
   const [isGoalLoading, setIsGoalLoading] = useState(false)
+  const [workerOptions, setWorkerOptions] = useState(WORKERS)
   const [showCelebration, setShowCelebration] = useState(false)
   const [unreadNoticeCount, setUnreadNoticeCount] = useState(0)
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false)
@@ -46,7 +49,9 @@ export default function HomePage() {
   const breakIntervalRef = useRef<number | null>(null)
   const breakCountdownIntervalRef = useRef<number | null>(null)
 
-  const selectedWorker = getWorkerById(workerId)
+  const selectedWorker =
+    workerOptions.find((worker) => worker.id === workerId) ??
+    getWorkerById(workerId)
   const canStart = workerId !== "" && selectedKnot !== "" && capturedImage !== null && !isLoading
   const isResultView = result !== null
   const todayLabel = new Intl.DateTimeFormat("ko-KR", {
@@ -124,6 +129,53 @@ export default function HomePage() {
     }
 
     void loadAdminSession()
+
+    const handleAdminSessionChanged = () => {
+      void loadAdminSession()
+    }
+
+    window.addEventListener(ADMIN_SESSION_CHANGED_EVENT, handleAdminSessionChanged)
+
+    return () => {
+      ignore = true
+      window.removeEventListener(ADMIN_SESSION_CHANGED_EVENT, handleAdminSessionChanged)
+    }
+  }, [])
+
+  useEffect(() => {
+    let ignore = false
+
+    const loadWorkers = async () => {
+      try {
+        const response = await fetch("/api/workers", { cache: "no-store" })
+        const payload = (await response.json()) as {
+          workers?: WorkerProfileWithStats[]
+        }
+
+        if (!response.ok) {
+          throw new Error("작업자 목록을 불러오지 못했습니다.")
+        }
+
+        const activeWorkers =
+          payload.workers
+            ?.filter((worker) => worker.active)
+            .map((worker) => ({
+              id: worker.id,
+              name: worker.name,
+              scoreReference: `${worker.knotType} 담당`,
+            })) ?? []
+
+        if (!ignore && activeWorkers.length > 0) {
+          setWorkerOptions(activeWorkers)
+        }
+      } catch {
+        if (!ignore) {
+          setWorkerOptions(WORKERS)
+        }
+      }
+    }
+
+    void loadWorkers()
 
     return () => {
       ignore = true
@@ -693,7 +745,7 @@ export default function HomePage() {
                   className="min-h-16 w-full rounded-[0.95rem] border border-knot-sand bg-knot-ivory px-5 py-4 text-lg text-knot-ink outline-none transition focus:border-knot-red sm:text-xl"
                 >
                   <option value="">작업자를 선택하세요</option>
-                  {WORKERS.map((workerOption) => (
+                  {workerOptions.map((workerOption) => (
                     <option key={workerOption.id} value={workerOption.id}>
                       {workerOption.name}
                     </option>

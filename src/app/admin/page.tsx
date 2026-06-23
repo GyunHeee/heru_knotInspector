@@ -2,6 +2,7 @@ import Link from "next/link"
 import AdminLogoutButton from "@/components/AdminLogoutButton"
 import HistoryTable from "@/components/HistoryTable"
 import ResponsiveMenu from "@/components/ResponsiveMenu"
+import { requireAdminSession } from "@/lib/adminGuard"
 import { getHistorySummary, MOCK_HISTORY } from "@/lib/mockHistory"
 
 const SUMMARY_CARDS = [
@@ -11,6 +12,7 @@ const SUMMARY_CARDS = [
 ] as const
 
 export default function AdminPage() {
+  requireAdminSession()
   const summary = getHistorySummary(MOCK_HISTORY)
   const adminLinks = [
     { href: "/admin/workers", label: "작업자 관리" },

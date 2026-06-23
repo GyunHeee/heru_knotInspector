@@ -1,10 +1,12 @@
 import Link from "next/link"
 import AdminReportsClient from "@/components/AdminReportsClient"
+import { requireAdminSession } from "@/lib/adminGuard"
 import { isReportsDbConfigured, listReports } from "@/lib/reports"
 
 export const dynamic = "force-dynamic"
 
 export default async function AdminReportsPage() {
+  requireAdminSession()
   const reports = await listReports()
 
   return (

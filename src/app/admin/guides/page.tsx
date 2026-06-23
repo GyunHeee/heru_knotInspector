@@ -1,10 +1,12 @@
 import Link from "next/link"
 import AdminGuidesClient from "@/components/AdminGuidesClient"
+import { requireAdminSession } from "@/lib/adminGuard"
 import { getAllGuides, isGuidesDbConfigured } from "@/lib/guides"
 
 export const dynamic = "force-dynamic"
 
 export default async function AdminGuidesPage() {
+  requireAdminSession()
   const guides = await getAllGuides()
 
   return (

@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { dispatchAdminSessionChangedEvent } from "@/lib/adminSessionClient"
 
 // 데모용 관리자 로그인 폼을 처리하는 클라이언트 컴포넌트입니다.
 export default function AdminLoginClient() {
@@ -28,6 +29,7 @@ export default function AdminLoginClient() {
         throw new Error(payload.error ?? "로그인에 실패했습니다.")
       }
 
+      dispatchAdminSessionChangedEvent()
       router.push("/admin")
       router.refresh()
     } catch (submitError) {
