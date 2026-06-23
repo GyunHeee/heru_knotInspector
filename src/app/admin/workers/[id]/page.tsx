@@ -62,20 +62,8 @@ export default async function WorkerDetailPage({ params }: WorkerDetailPageProps
 
             <div className="grid gap-4 sm:grid-cols-2 md:min-w-[320px]">
               <div className="rounded-2xl bg-slate-50 px-5 py-4 text-center">
-                <p className="text-base font-semibold text-slate-500">누적 생산량</p>
+                <p className="text-base font-semibold text-slate-500">누적 촬영 등록 수</p>
                 <p className="mt-2 text-4xl font-black text-slate-900">{worker.stats.totalProduction}</p>
-              </div>
-              <div className="rounded-2xl bg-slate-50 px-5 py-4 text-center">
-                <p className="text-base font-semibold text-slate-500">합격률</p>
-                <p className="mt-2 text-4xl font-black text-pass">{worker.stats.passRate}%</p>
-              </div>
-              <div className="rounded-2xl bg-slate-50 px-5 py-4 text-center">
-                <p className="text-base font-semibold text-slate-500">합격 건수</p>
-                <p className="mt-2 text-3xl font-black text-slate-900">{worker.stats.passCount}건</p>
-              </div>
-              <div className="rounded-2xl bg-slate-50 px-5 py-4 text-center">
-                <p className="text-base font-semibold text-slate-500">불합격 건수</p>
-                <p className="mt-2 text-3xl font-black text-fail">{worker.stats.failCount}건</p>
               </div>
             </div>
           </div>

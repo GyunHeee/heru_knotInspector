@@ -79,7 +79,53 @@ export default function AdminReportsClient({ initialReports, dbConfigured }: Adm
       {message ? <p className="text-lg font-semibold text-pass">{message}</p> : null}
       {error ? <p className="text-lg font-semibold text-fail">{error}</p> : null}
 
-      <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+      <section className="space-y-4 md:hidden">
+        {reports.length === 0 ? (
+          <div className="rounded-3xl border border-slate-200 bg-white px-5 py-8 text-center text-lg text-slate-500 shadow-sm">
+            접수된 신고가 없습니다.
+          </div>
+        ) : (
+          reports.map((report) => (
+            <article key={report.id} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-slate-500">신고 #{report.id}</p>
+                  <h2 className="mt-1 text-2xl font-black text-slate-900">{report.workerName}</h2>
+                </div>
+                <span
+                  className={`inline-flex rounded-full px-3 py-1 text-base font-bold ${
+                    report.status === "DONE" ? "bg-emerald-100 text-pass" : "bg-rose-100 text-fail"
+                  }`}
+                >
+                  {report.statusLabel}
+                </span>
+              </div>
+
+              <div className="mt-4 space-y-3 text-lg text-slate-700">
+                <div className="flex items-start justify-between gap-4 rounded-2xl bg-slate-50 px-4 py-3">
+                  <span className="font-semibold text-slate-500">신고 유형</span>
+                  <span className="text-right font-bold text-slate-900">{report.typeLabel}</span>
+                </div>
+                <div className="flex items-start justify-between gap-4 rounded-2xl bg-slate-50 px-4 py-3">
+                  <span className="font-semibold text-slate-500">접수 시각</span>
+                  <span className="text-right font-bold text-slate-900">{report.createdAt}</span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => void handleMarkDone(report.id)}
+                disabled={!dbConfigured || report.status === "DONE" || updatingId === report.id}
+                className="mt-4 min-h-14 w-full rounded-2xl bg-slate-900 px-4 py-3 text-lg font-bold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500"
+              >
+                {report.status === "DONE" ? "처리완료" : updatingId === report.id ? "변경 중..." : "처리 완료"}
+              </button>
+            </article>
+          ))
+        )}
+      </section>
+
+      <section className="hidden overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm md:block">
         <div className="overflow-x-auto">
           <table className="min-w-full border-collapse text-left">
             <thead className="bg-slate-100 text-base font-bold text-slate-700">

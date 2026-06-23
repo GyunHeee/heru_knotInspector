@@ -3,17 +3,19 @@ import AdminLogoutButton from "@/components/AdminLogoutButton"
 import HistoryTable from "@/components/HistoryTable"
 import ResponsiveMenu from "@/components/ResponsiveMenu"
 import { requireAdminSession } from "@/lib/adminGuard"
+import { getInspectionSummary, isInspectionDbConfigured, listInspectionRecords } from "@/lib/inspections"
 import { getHistorySummary, MOCK_HISTORY } from "@/lib/mockHistory"
 
 const SUMMARY_CARDS = [
-  { key: "total", label: "오늘 총 검사 수", icon: "◎", trend: "작업 흐름 안정", valueSuffix: "건" },
-  { key: "passRate", label: "합격률", icon: "↗", trend: "기준 대비 양호", valueSuffix: "%" },
-  { key: "averageAccuracy", label: "평균 정확도", icon: "◌", trend: "판정 신뢰도", valueSuffix: "%" },
+  { key: "total", label: "오늘 총 등록 수", icon: "◎", trend: "등록 흐름 확인", valueSuffix: "건" },
+  { key: "dongsim", label: "동심결 등록 수", icon: "◌", trend: "매듭 종류별 집계", valueSuffix: "건" },
+  { key: "maehwa", label: "매화 등록 수", icon: "◍", trend: "매듭 종류별 집계", valueSuffix: "건" },
 ] as const
 
-export default function AdminPage() {
+export default async function AdminPage() {
   requireAdminSession()
-  const summary = getHistorySummary(MOCK_HISTORY)
+  const history = isInspectionDbConfigured() ? await listInspectionRecords(10) : MOCK_HISTORY
+  const summary = isInspectionDbConfigured() ? await getInspectionSummary() : getHistorySummary(MOCK_HISTORY)
   const adminLinks = [
     { href: "/admin/workers", label: "작업자 관리" },
     { href: "/admin/goals", label: "목표 관리" },
@@ -24,8 +26,8 @@ export default function AdminPage() {
   ]
   const values = {
     total: summary.totalCount,
-    passRate: summary.passRate,
-    averageAccuracy: summary.averageAccuracy,
+    dongsim: summary.dongsimCount,
+    maehwa: summary.maehwaCount,
   }
 
   return (
@@ -37,9 +39,9 @@ export default function AdminPage() {
               <div className="inline-flex rounded-full bg-knot-red/10 px-4 py-2 text-sm font-bold text-knot-red">
                 관리자 대시보드
               </div>
-              <h1 className="mt-4 text-3xl font-black tracking-tight text-knot-ink md:text-5xl">오늘의 검사 현황</h1>
+              <h1 className="mt-4 text-3xl font-black tracking-tight text-knot-ink md:text-5xl">오늘의 촬영 등록 현황</h1>
               <p className="mt-3 text-lg text-knot-brown">
-                최근 검사 흐름과 합격 추이를 한 화면에서 확인하고, 작업자와 공정 상태를 빠르게 점검할 수 있습니다.
+                최근 촬영 등록 흐름과 매듭 종류별 등록 수를 한 화면에서 확인하고, 작업자 진행 상태를 빠르게 점검할 수 있습니다.
               </p>
             </div>
 
@@ -88,14 +90,14 @@ export default function AdminPage() {
         <section className="space-y-4">
           <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
             <div>
-              <h2 className="text-2xl font-black text-knot-ink">최근 검사 이력</h2>
-              <p className="text-lg text-knot-brown">오늘 진행된 최근 10건의 검사 결과를 시간 순으로 정리했습니다.</p>
+              <h2 className="text-2xl font-black text-knot-ink">최근 촬영 등록 이력</h2>
+              <p className="text-lg text-knot-brown">최근 등록된 10건의 촬영 이력을 시간 순으로 정리했습니다.</p>
             </div>
             <div className="inline-flex rounded-full bg-knot-paper px-4 py-2 text-sm font-semibold text-knot-brown">
               실시간 보고용 요약 표
             </div>
           </div>
-          <HistoryTable history={MOCK_HISTORY} />
+          <HistoryTable history={history} />
         </section>
       </div>
     </main>

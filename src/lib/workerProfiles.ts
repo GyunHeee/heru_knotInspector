@@ -7,7 +7,7 @@ import type {
   WorkerProfileUpdateInput,
   WorkerProfileWithStats,
 } from "@/lib/workerProfilesShared"
-import { MOCK_HISTORY } from "@/lib/mockHistory"
+import { getInspectionCountByWorkerId } from "@/lib/inspections"
 
 type WorkerRow = QueryResultRow & {
   id: string
@@ -95,24 +95,17 @@ function mapWorkerRow(row: WorkerRow): WorkerProfile {
   }
 }
 
-function computeWorkerStats(workerName: string): WorkerProfileStats {
-  const items = MOCK_HISTORY.filter((item) => item.worker === workerName)
-  const totalProduction = items.length
-  const passCount = items.filter((item) => item.result === "PASS").length
-  const failCount = totalProduction - passCount
-
+async function computeWorkerStats(workerId: string): Promise<WorkerProfileStats> {
+  const totalProduction = await getInspectionCountByWorkerId(workerId)
   return {
     totalProduction,
-    passRate: totalProduction === 0 ? 0 : Math.round((passCount / totalProduction) * 100),
-    passCount,
-    failCount,
   }
 }
 
-function attachStats(worker: WorkerProfile): WorkerProfileWithStats {
+async function attachStats(worker: WorkerProfile): Promise<WorkerProfileWithStats> {
   return {
     ...worker,
-    stats: computeWorkerStats(worker.name),
+    stats: await computeWorkerStats(worker.id),
   }
 }
 
@@ -188,7 +181,7 @@ export async function getWorkerProfiles() {
     ORDER BY active DESC, created_at DESC
   `)
 
-  return rows.map(mapWorkerRow).map(attachStats)
+  return Promise.all(rows.map(mapWorkerRow).map(attachStats))
 }
 
 // 단일 작업자 상세 정보를 불러오는 함수입니다.

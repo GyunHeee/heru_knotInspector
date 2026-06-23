@@ -12,9 +12,6 @@ export type WorkerProfile = {
 
 export type WorkerProfileStats = {
   totalProduction: number
-  passRate: number
-  passCount: number
-  failCount: number
 }
 
 export type WorkerProfileWithStats = WorkerProfile & {

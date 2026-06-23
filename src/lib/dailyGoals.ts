@@ -247,7 +247,7 @@ export async function setDailyGoal(input: DailyGoalInput) {
   return mapRowToProgressWithWorkerName(rows[0], await getGoalWorkerName(input.workerId))
 }
 
-// 검사 합격 시 오늘 달성 수량을 1 증가시키는 함수입니다.
+// 촬영 등록이 완료되면 오늘 달성 수량을 1 증가시키는 함수입니다.
 export async function incrementDailyGoalAchieved(workerId: string) {
   if (!isDailyGoalsDbConfigured()) {
     throw new Error("DB_NOT_CONFIGURED")

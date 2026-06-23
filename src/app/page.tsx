@@ -11,19 +11,19 @@ import KnotSelector from "@/components/KnotSelector"
 import ResultCard from "@/components/ResultCard"
 import { ADMIN_SESSION_CHANGED_EVENT } from "@/lib/adminSessionClient"
 import type { DailyGoalProgress } from "@/lib/dailyGoalsShared"
+import type { InspectionRecord } from "@/lib/inspectionRecordsShared"
 import type { NoticeListResponse } from "@/lib/noticesShared"
-import { analyzeKnot, type KnotResult } from "@/lib/mockAnalyzer"
 import type { WorkerProfileWithStats } from "@/lib/workerProfilesShared"
 import { getWorkerById, WORKERS } from "@/lib/workers"
 import { DEFAULT_VOICE_SETTINGS, loadVoiceSettings, speakKorean, type VoiceSettings } from "@/lib/voiceSettings"
 import { DEFAULT_BREAK_REMINDER_SETTINGS, loadBreakReminderSettings, type BreakReminderSettings } from "@/lib/breakReminderSettings"
 
-// 작업자가 실제 카메라로 사진을 촬영하고 검사 결과를 확인하는 메인 화면입니다.
+// 작업자가 실제 카메라로 사진을 촬영하고 등록하는 메인 화면입니다.
 export default function HomePage() {
   const [workerId, setWorkerId] = useState("")
   const [selectedKnot, setSelectedKnot] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const [result, setResult] = useState<KnotResult | null>(null)
+  const [result, setResult] = useState<InspectionRecord | null>(null)
   const [capturedImage, setCapturedImage] = useState<string | null>(null)
   const [isCameraReady, setIsCameraReady] = useState(false)
   const [isCameraStarting, setIsCameraStarting] = useState(false)
@@ -83,7 +83,7 @@ export default function HomePage() {
 
     return showCameraStep
   })
-  const currentStepTitle = !showKnotStep ? "1단계 작업자 선택" : !showCameraStep ? "2단계 매듭 종류 선택" : "3단계 촬영 및 검사"
+  const currentStepTitle = !showKnotStep ? "1단계 작업자 선택" : !showCameraStep ? "2단계 매듭 종류 선택" : "3단계 촬영 및 등록"
   const quickLinks = [
     { href: "/attendance", label: "출퇴근 기록" },
     { href: "/guides", label: "가이드" },
@@ -281,12 +281,7 @@ export default function HomePage() {
       return
     }
 
-    const speechText =
-      result.result === "PASS"
-        ? "합격입니다"
-        : `불합격입니다. 사유: ${result.reason ?? "확인 필요"}`
-
-    speakKorean(speechText, voiceSettings)
+    speakKorean("촬영 등록이 완료되었습니다", voiceSettings)
     hasSpokenResultRef.current = true
   }, [result, voiceSettings])
 
@@ -503,38 +498,58 @@ export default function HomePage() {
 
     window.setTimeout(() => {
       void (async () => {
-        const inspectedResult = analyzeKnot(selectedKnot)
         let updatedGoal = goal
 
-        if (inspectedResult.result === "PASS" && workerId !== "") {
+        try {
+          const response = await fetch("/api/inspections", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              workerId,
+              workerName: selectedWorker?.name ?? workerId,
+              knotType: selectedKnot,
+              imageData: capturedImage,
+            }),
+          })
+          const payload = (await response.json()) as { error?: string; record?: InspectionRecord }
+
+          if (!response.ok || !payload.record) {
+            throw new Error(payload.error ?? "촬영 등록 저장에 실패했습니다.")
+          }
+
           try {
-            const response = await fetch("/api/goals", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ workerId }),
-            })
-            const payload = (await response.json()) as { error?: string; goal?: DailyGoalProgress }
+            if (workerId !== "") {
+              const goalResponse = await fetch("/api/goals", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ workerId }),
+              })
+              const goalPayload = (await goalResponse.json()) as { error?: string; goal?: DailyGoalProgress }
 
-            if (!response.ok || !payload.goal) {
-              throw new Error(payload.error ?? "달성 수 업데이트에 실패했습니다.")
-            }
+              if (!goalResponse.ok || !goalPayload.goal) {
+                throw new Error(goalPayload.error ?? "달성 수 업데이트에 실패했습니다.")
+              }
 
-            updatedGoal = payload.goal
-            setGoal(payload.goal)
+              updatedGoal = goalPayload.goal
+              setGoal(goalPayload.goal)
 
-            if (!goal?.reached && payload.goal.reached) {
-              setShowCelebration(true)
+              if (!goal?.reached && goalPayload.goal.reached) {
+                setShowCelebration(true)
+              }
             }
           } catch (updateError) {
             setGoalError(updateError instanceof Error ? updateError.message : "달성 수 업데이트에 실패했습니다.")
           }
-        }
 
-        setResult(inspectedResult)
-        setIsLoading(false)
+          setResult(payload.record)
+          setIsLoading(false)
 
-        if (inspectedResult.result === "FAIL" && updatedGoal) {
-          setGoal(updatedGoal)
+          if (updatedGoal) {
+            setGoal(updatedGoal)
+          }
+        } catch (submitError) {
+          setGoalError(submitError instanceof Error ? submitError.message : "촬영 등록 저장에 실패했습니다.")
+          setIsLoading(false)
         }
       })()
     }, 1500)
@@ -593,24 +608,14 @@ export default function HomePage() {
         </div>
         {isResultView && result ? (
           <section className="result-appear flex flex-1 flex-col items-center justify-center gap-6 py-3 text-center sm:gap-8">
-            <div
-              className={`flex h-[210px] w-[210px] items-center justify-center rounded-full border text-center shadow-card sm:h-[240px] sm:w-[240px] md:h-[280px] md:w-[280px] ${
-                result.result === "PASS"
-                  ? "knot-result-pass border-pass/20 text-pass"
-                  : "knot-result-fail border-fail/20 text-fail"
-              }`}
-            >
+            <div className="knot-result-pass flex h-[210px] w-[210px] items-center justify-center rounded-full border border-pass/20 text-center text-pass shadow-card sm:h-[240px] sm:w-[240px] md:h-[280px] md:w-[280px]">
               <div>
-                <div className="text-[78px] font-black leading-none sm:text-[92px] md:text-[108px]">
-                  {result.result === "PASS" ? "✓" : "✕"}
-                </div>
-                <p className="mt-3 text-3xl font-black tracking-tight md:text-4xl">
-                  {result.result === "PASS" ? "합격" : "불합격"}
-                </p>
+                <div className="text-[78px] font-black leading-none sm:text-[92px] md:text-[108px]">✓</div>
+                <p className="mt-3 text-3xl font-black tracking-tight md:text-4xl">등록 완료</p>
               </div>
             </div>
             <div className="w-full max-w-2xl">
-              <ResultCard knotType={selectedKnot} result={result} />
+              <ResultCard workerName={result.workerName} knotType={result.knotType} submittedAt={result.createdAt} />
             </div>
             {goal ? (
               <div className="w-full max-w-2xl rounded-[1.05rem] border border-knot-sand bg-knot-ivory p-5 text-left shadow-card">
@@ -783,7 +788,7 @@ export default function HomePage() {
                   <div className="flex items-center justify-between gap-4">
                     <div>
                       <p className="text-sm font-semibold text-knot-brown">3단계</p>
-                      <h2 className="mt-1 text-xl font-black text-knot-ink sm:text-2xl">촬영 및 확인</h2>
+                      <h2 className="mt-1 text-xl font-black text-knot-ink sm:text-2xl">촬영 및 등록</h2>
                     </div>
                     <span className="inline-flex rounded-full bg-knot-paper px-3 py-1 text-sm font-semibold text-knot-brown">
                       {capturedImage ? "촬영 완료" : "촬영 대기"}
@@ -859,7 +864,7 @@ export default function HomePage() {
 
                   <div className="rounded-[1rem] bg-knot-ivory px-4 py-4 text-lg text-knot-brown">
                     <p className="font-semibold text-knot-ink">
-                      {capturedImage ? "촬영이 완료되었습니다. 검사 시작 버튼을 눌러주세요." : "실시간 카메라 화면에서 매듭을 중앙에 맞춰주세요."}
+                      {capturedImage ? "촬영이 완료되었습니다. 촬영 등록 버튼을 눌러주세요." : "실시간 카메라 화면에서 매듭을 중앙에 맞춰주세요."}
                     </p>
                     {cameraError ? <p className="font-semibold text-fail">{cameraError}</p> : null}
                   </div>
@@ -881,10 +886,10 @@ export default function HomePage() {
                         <circle cx="24" cy="24" r="18" />
                       </svg>
                     </span>
-                    검사 중...
+                    등록 중...
                   </>
                 ) : (
-                  "검사 시작"
+                  "촬영 등록"
                 )}
               </button>
             </div>

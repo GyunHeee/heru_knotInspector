@@ -249,12 +249,8 @@ export default function WorkersAdminClient({
 
               <div className="grid gap-3 text-center sm:grid-cols-2 md:min-w-[240px]">
                 <div className="rounded-2xl bg-slate-50 px-4 py-3">
-                  <p className="text-sm font-semibold text-slate-500">누적 생산량</p>
+                  <p className="text-sm font-semibold text-slate-500">누적 촬영 등록 수</p>
                   <p className="mt-2 text-2xl font-black text-slate-900">{worker.stats.totalProduction}건</p>
-                </div>
-                <div className="rounded-2xl bg-slate-50 px-4 py-3">
-                  <p className="text-sm font-semibold text-slate-500">합격률</p>
-                  <p className="mt-2 text-2xl font-black text-pass">{worker.stats.passRate}%</p>
                 </div>
               </div>
             </div>
