@@ -6,7 +6,6 @@ export type Worker = {
 
 // 출퇴근과 검사 기능에서 공통으로 사용할 작업자 기준 정보입니다.
 export const WORKERS: Worker[] = [
-  { id: "K-001", name: "오세철", scoreReference: "20점 / MCI 의심 범위" },
   { id: "K-002", name: "김상희", scoreReference: "26점 / 정상 근접" },
   { id: "K-003", name: "김경희", scoreReference: "21점 / MCI 의심 범위" },
   { id: "K-004", name: "최복술", scoreReference: "13점 / 확인 필요" },

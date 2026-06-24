@@ -103,13 +103,13 @@ export default function WorkerNoticesClient({ initialWorkerId }: WorkerNoticesCl
 
   return (
     <div className="space-y-6 md:space-y-8">
-      <section className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200 md:p-6">
+      <section className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200 sm:p-5 md:p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="text-lg font-semibold text-slate-500">작업자 공지함</p>
-            <h1 className="text-3xl font-black text-slate-900 md:text-4xl">중요한 공지를 확인하세요</h1>
+            <h1 className="text-3xl font-black leading-tight text-slate-900 md:text-4xl">중요한 공지를 확인하세요</h1>
           </div>
-          <div className="rounded-2xl bg-rose-50 px-4 py-3 text-lg font-bold text-rose-600">
+          <div className="w-full rounded-2xl bg-rose-50 px-4 py-3 text-center text-lg font-bold text-rose-600 sm:w-auto">
             읽지 않은 공지 {unreadCount}건
           </div>
         </div>
@@ -136,6 +136,15 @@ export default function WorkerNoticesClient({ initialWorkerId }: WorkerNoticesCl
           </div>
         ) : null}
         {error ? <p className="mt-4 text-lg font-semibold text-fail">{error}</p> : null}
+
+        <div className="mt-5 flex justify-end">
+          <Link
+            href="/"
+            className="text-base font-semibold text-slate-500 underline-offset-4 hover:underline"
+          >
+            검사 화면으로
+          </Link>
+        </div>
       </section>
 
       <section className="space-y-4">
@@ -152,17 +161,22 @@ export default function WorkerNoticesClient({ initialWorkerId }: WorkerNoticesCl
             <Link
               key={notice.id}
               href={workerId ? `/notices/${notice.id}?workerId=${workerId}` : `/notices/${notice.id}`}
-              className="block rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:ring-slate-300 md:p-6"
+              className="block rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200 transition hover:ring-slate-300 sm:p-5 md:p-6"
             >
-              <div className="flex items-start justify-between gap-4">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-3">
-                    {!notice.isRead ? <span className="h-3 w-3 rounded-full bg-fail" /> : null}
-                    <p className="truncate text-2xl font-black text-slate-900">{notice.title}</p>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start gap-3">
+                    {!notice.isRead ? <span className="mt-2 h-3 w-3 shrink-0 rounded-full bg-fail" /> : null}
+                    <div className="min-w-0">
+                      <p className="text-2xl font-black leading-snug text-slate-900 sm:truncate">{notice.title}</p>
+                      {!notice.isRead ? (
+                        <p className="mt-1 text-base font-bold text-fail">읽지 않은 공지</p>
+                      ) : null}
+                    </div>
                   </div>
                   <p className="mt-3 text-[20px] leading-relaxed text-slate-700">{notice.contentPreview}</p>
                 </div>
-                <p className="shrink-0 text-base font-semibold text-slate-500">{notice.createdAt}</p>
+                <p className="shrink-0 text-base font-semibold text-slate-500 sm:pt-1">{notice.createdAt}</p>
               </div>
             </Link>
           ))

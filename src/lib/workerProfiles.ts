@@ -31,13 +31,6 @@ const db = connectionString
 
 const DEFAULT_WORKER_ROWS = [
   {
-    id: "K-001",
-    name: "오세철",
-    phone: "010-1111-0001",
-    knotType: "동심결 매듭",
-    note: "손 힘이 좋아 동심결 조임 작업 숙련",
-  },
-  {
     id: "K-002",
     name: "김상희",
     phone: "010-1111-0002",
@@ -57,6 +50,34 @@ const DEFAULT_WORKER_ROWS = [
     phone: "010-1111-0004",
     knotType: "매화 매듭",
     note: "세밀 작업 시 확대경 사용 필요",
+  },
+  {
+    id: "K-005",
+    name: "김경애",
+    phone: "010-1111-0005",
+    knotType: "동심결 매듭",
+    note: "손끝 작업이 안정적이며 반복 공정 숙련",
+  },
+  {
+    id: "K-006",
+    name: "양인애",
+    phone: "010-1111-0006",
+    knotType: "매화 매듭",
+    note: "매화 매듭 꽃잎 균형 작업 담당",
+  },
+  {
+    id: "K-007",
+    name: "이금자",
+    phone: "010-1111-0007",
+    knotType: "동심결 매듭",
+    note: "오후 라인 동심결 제작 담당",
+  },
+  {
+    id: "K-008",
+    name: "김영숙",
+    phone: "010-1111-0008",
+    knotType: "공통",
+    note: "공정 보조 및 공통 작업 지원",
   },
 ] as const
 
@@ -115,11 +136,24 @@ async function seedDefaultWorkers() {
       `
         INSERT INTO workers (id, name, phone, knot_type, note, active)
         VALUES ($1, $2, $3, $4, $5, true)
-        ON CONFLICT (id) DO NOTHING
+        ON CONFLICT (id) DO UPDATE
+        SET
+          name = EXCLUDED.name,
+          phone = EXCLUDED.phone,
+          knot_type = EXCLUDED.knot_type,
+          note = EXCLUDED.note
       `,
       [worker.id, worker.name, worker.phone, worker.knotType, worker.note],
     )
   }
+
+  await queryRows(
+    `
+      UPDATE workers
+      SET active = false
+      WHERE id = 'K-001' AND name = '오세철'
+    `,
+  )
 }
 
 async function ensureWorkersSchema() {

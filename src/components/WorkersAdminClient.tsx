@@ -140,12 +140,12 @@ export default function WorkersAdminClient({
 
   return (
     <div className="grid gap-6 xl:grid-cols-[380px_minmax(0,1fr)]">
-      <section className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+      <section className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200 sm:p-5 md:p-6">
         <div className="mb-5">
-          <h2 className="text-2xl font-black text-slate-900">
+          <h2 className="text-2xl font-black leading-tight text-slate-900">
             {editingWorkerId ? "작업자 정보 수정" : "작업자 등록"}
           </h2>
-          <p className="mt-2 text-lg text-slate-500">이름, 연락처, 담당 매듭, 특이사항을 관리합니다.</p>
+          <p className="mt-2 text-lg leading-relaxed text-slate-500">이름, 연락처, 담당 매듭, 특이사항을 관리합니다.</p>
         </div>
 
         <div className="space-y-4">
@@ -194,12 +194,12 @@ export default function WorkersAdminClient({
         {message ? <p className="mt-4 text-base font-semibold text-pass">{message}</p> : null}
         {errorMessage ? <p className="mt-4 text-base font-semibold text-fail">{errorMessage}</p> : null}
 
-        <div className="mt-5 flex gap-3">
+        <div className="mt-5 flex flex-col gap-3 sm:flex-row">
           <button
             type="button"
             onClick={() => void submitForm()}
             disabled={!dbConfigured || isSubmitting}
-            className="min-h-14 flex-1 rounded-2xl bg-slate-900 px-4 py-3 text-lg font-bold text-white disabled:cursor-not-allowed disabled:bg-slate-300"
+            className="min-h-14 w-full flex-1 rounded-2xl bg-slate-900 px-4 py-3 text-lg font-bold text-white disabled:cursor-not-allowed disabled:bg-slate-300"
           >
             {isSubmitting ? "저장 중..." : editingWorkerId ? "수정 저장" : "등록하기"}
           </button>
@@ -207,7 +207,7 @@ export default function WorkersAdminClient({
             <button
               type="button"
               onClick={resetForm}
-              className="min-h-14 rounded-2xl border border-slate-300 px-4 py-3 text-lg font-bold text-slate-700"
+              className="min-h-14 w-full rounded-2xl border border-slate-300 px-4 py-3 text-lg font-bold text-slate-700 sm:w-auto"
             >
               취소
             </button>
@@ -223,13 +223,13 @@ export default function WorkersAdminClient({
         ) : null}
 
         {workers.map((worker) => (
-          <article key={worker.id} className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+          <article key={worker.id} className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200 sm:p-5 md:p-6">
             <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
-              <div className="flex items-start gap-4">
+              <div className="flex items-start gap-3 sm:gap-4">
                 <WorkerAvatar name={worker.name} />
-                <div className="space-y-2">
+                <div className="min-w-0 space-y-2">
                   <div className="flex flex-wrap items-center gap-3">
-                    <h3 className="text-2xl font-black text-slate-900">{worker.name}</h3>
+                    <h3 className="text-2xl font-black leading-tight text-slate-900">{worker.name}</h3>
                     <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-bold text-slate-600">
                       {worker.id}
                     </span>
@@ -242,12 +242,12 @@ export default function WorkersAdminClient({
                       {worker.active ? "활성" : "비활성"}
                     </span>
                   </div>
-                  <p className="text-lg text-slate-600">연락처 {worker.phone}</p>
-                  <p className="text-lg text-slate-600">특이사항 {worker.note || "없음"}</p>
+                  <p className="break-all text-lg text-slate-600">연락처 {worker.phone}</p>
+                  <p className="text-lg leading-relaxed text-slate-600">특이사항 {worker.note || "없음"}</p>
                 </div>
               </div>
 
-              <div className="grid gap-3 text-center sm:grid-cols-2 md:min-w-[240px]">
+              <div className="grid gap-3 text-center md:min-w-[240px]">
                 <div className="rounded-2xl bg-slate-50 px-4 py-3">
                   <p className="text-sm font-semibold text-slate-500">누적 촬영 등록 수</p>
                   <p className="mt-2 text-2xl font-black text-slate-900">{worker.stats.totalProduction}건</p>
@@ -255,17 +255,17 @@ export default function WorkersAdminClient({
               </div>
             </div>
 
-            <div className="mt-5 flex flex-wrap gap-3">
+            <div className="mt-5 grid gap-3 sm:grid-cols-3">
               <Link
                 href={`/admin/workers/${worker.id}`}
-                className="inline-flex min-h-12 items-center justify-center rounded-2xl border border-slate-300 px-4 py-2 text-base font-bold text-slate-700"
+                className="inline-flex min-h-12 w-full items-center justify-center rounded-2xl border border-slate-300 px-4 py-2 text-base font-bold text-slate-700"
               >
                 상세 보기
               </Link>
               <button
                 type="button"
                 onClick={() => handleEdit(worker)}
-                className="min-h-12 rounded-2xl border border-slate-300 px-4 py-2 text-base font-bold text-slate-700"
+                className="min-h-12 w-full rounded-2xl border border-slate-300 px-4 py-2 text-base font-bold text-slate-700"
               >
                 수정
               </button>
@@ -273,7 +273,7 @@ export default function WorkersAdminClient({
                 type="button"
                 onClick={() => void toggleActive(worker)}
                 disabled={!dbConfigured}
-                className="min-h-12 rounded-2xl bg-slate-900 px-4 py-2 text-base font-bold text-white disabled:cursor-not-allowed disabled:bg-slate-300"
+                className="min-h-12 w-full rounded-2xl bg-slate-900 px-4 py-2 text-base font-bold text-white disabled:cursor-not-allowed disabled:bg-slate-300"
               >
                 {worker.active ? "비활성화" : "다시 활성화"}
               </button>

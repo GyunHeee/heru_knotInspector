@@ -52,10 +52,10 @@ export default function AdminNoticesClient({ initialNotices, dbConfigured }: Adm
 
   return (
     <div className="space-y-6 md:space-y-8">
-      <section className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200 md:p-6">
+      <section className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200 sm:p-5 md:p-6">
         <div className="space-y-1">
-          <h2 className="text-2xl font-black text-slate-900">공지 작성</h2>
-          <p className="text-lg text-slate-500">작성한 공지는 작업자 공지 화면에 바로 표시됩니다.</p>
+          <h2 className="text-2xl font-black leading-tight text-slate-900">공지 작성</h2>
+          <p className="text-lg leading-relaxed text-slate-500">작성한 공지는 작업자 공지 화면에 바로 표시됩니다.</p>
         </div>
 
         {!dbConfigured ? (
@@ -92,17 +92,17 @@ export default function AdminNoticesClient({ initialNotices, dbConfigured }: Adm
           <button
             type="submit"
             disabled={!dbConfigured || isSaving}
-            className="min-h-14 rounded-2xl bg-slate-900 px-6 py-3 text-lg font-bold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500"
+            className="min-h-14 w-full rounded-2xl bg-slate-900 px-6 py-3 text-lg font-bold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 sm:w-auto"
           >
             {isSaving ? "등록 중..." : "공지 등록"}
           </button>
         </form>
       </section>
 
-      <section className="space-y-4 rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200 md:p-6">
+      <section className="space-y-4 rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200 sm:p-5 md:p-6">
         <div>
-          <h2 className="text-2xl font-black text-slate-900">최근 공지</h2>
-          <p className="text-lg text-slate-500">최근 등록된 공지를 최신순으로 확인합니다.</p>
+          <h2 className="text-2xl font-black leading-tight text-slate-900">최근 공지</h2>
+          <p className="text-lg leading-relaxed text-slate-500">최근 등록된 공지를 최신순으로 확인합니다.</p>
         </div>
 
         <div className="space-y-3">
@@ -112,13 +112,13 @@ export default function AdminNoticesClient({ initialNotices, dbConfigured }: Adm
             </div>
           ) : (
             notices.map((notice) => (
-              <article key={notice.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <div className="flex items-start justify-between gap-4">
+              <article key={notice.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div>
-                    <p className="text-xl font-black text-slate-900">{notice.title}</p>
-                    <p className="mt-2 text-lg text-slate-600">{notice.contentPreview}</p>
+                    <p className="text-xl font-black leading-snug text-slate-900">{notice.title}</p>
+                    <p className="mt-2 text-lg leading-relaxed text-slate-600">{notice.contentPreview}</p>
                   </div>
-                  <p className="shrink-0 text-base font-semibold text-slate-500">{notice.createdAt}</p>
+                  <p className="shrink-0 text-base font-semibold text-slate-500 sm:pt-1">{notice.createdAt}</p>
                 </div>
               </article>
             ))

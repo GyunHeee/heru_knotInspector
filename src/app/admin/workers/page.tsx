@@ -19,16 +19,16 @@ export default async function WorkersAdminPage() {
             <p className="text-lg font-semibold text-slate-500">작업자 프로필 관리</p>
             <h1 className="text-3xl font-black text-slate-900 md:text-4xl">작업자 등록 및 조회</h1>
           </div>
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
             <Link
               href="/admin"
-              className="inline-flex min-h-14 items-center justify-center rounded-2xl border border-slate-300 bg-white px-5 py-3 text-base font-bold text-slate-700 transition hover:border-slate-500"
+              className="inline-flex min-h-14 w-full items-center justify-center rounded-2xl border border-slate-300 bg-white px-5 py-3 text-base font-bold text-slate-700 transition hover:border-slate-500 sm:w-auto"
             >
               관리자 홈
             </Link>
             <Link
               href="/"
-              className="inline-flex min-h-14 items-center justify-center rounded-2xl border border-slate-300 bg-white px-5 py-3 text-base font-bold text-slate-700 transition hover:border-slate-500"
+              className="inline-flex min-h-14 w-full items-center justify-center rounded-2xl border border-slate-300 bg-white px-5 py-3 text-base font-bold text-slate-700 transition hover:border-slate-500 sm:w-auto"
             >
               검사 화면
             </Link>
