@@ -1,5 +1,6 @@
 import "server-only"
-import { Pool, type QueryResultRow } from "pg"
+import type { QueryResultRow } from "pg"
+import { connectionString, createDbPool } from "@/lib/db"
 import type { InspectionRecord, InspectionRecordCreateInput } from "@/lib/inspectionRecordsShared"
 
 type InspectionRecordRow = QueryResultRow & {
@@ -11,15 +12,7 @@ type InspectionRecordRow = QueryResultRow & {
   created_at: Date
 }
 
-const connectionString =
-  process.env.DATABASE_URL ?? process.env.POSTGRES_URL ?? process.env.POSTGRES_PRISMA_URL ?? null
-
-const db = connectionString
-  ? new Pool({
-      connectionString,
-      ssl: false,
-    })
-  : null
+const db = createDbPool()
 
 // 촬영 등록 DB 연결 여부를 확인하는 헬퍼입니다.
 export function isInspectionDbConfigured() {

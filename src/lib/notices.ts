@@ -1,11 +1,12 @@
 import "server-only"
-import { Pool, type QueryResultRow } from "pg"
+import type { QueryResultRow } from "pg"
 import {
   createNoticePreview,
   type NoticeCreateInput,
   type NoticeDetail,
   type NoticeSummary,
 } from "@/lib/noticesShared"
+import { connectionString, createDbPool } from "@/lib/db"
 
 type NoticeRow = QueryResultRow & {
   id: number
@@ -15,15 +16,7 @@ type NoticeRow = QueryResultRow & {
   read_at?: Date | null
 }
 
-const connectionString =
-  process.env.DATABASE_URL ?? process.env.POSTGRES_URL ?? process.env.POSTGRES_PRISMA_URL ?? null
-
-const db = connectionString
-  ? new Pool({
-      connectionString,
-      ssl: false,
-    })
-  : null
+const db = createDbPool()
 
 // 공지 기능의 DB 연결 여부를 확인하는 헬퍼입니다.
 export function isNoticesDbConfigured() {

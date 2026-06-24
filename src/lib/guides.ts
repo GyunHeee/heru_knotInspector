@@ -1,6 +1,7 @@
 import "server-only"
-import { Pool, type QueryResultRow } from "pg"
+import type { QueryResultRow } from "pg"
 import type { GuideInput, GuideItem, KnotGuideType } from "@/lib/guidesShared"
+import { connectionString, createDbPool } from "@/lib/db"
 import { GUIDE_KNOT_TYPES } from "@/lib/guidesShared"
 
 type GuideRow = QueryResultRow & {
@@ -11,15 +12,7 @@ type GuideRow = QueryResultRow & {
   description: string
 }
 
-const connectionString =
-  process.env.DATABASE_URL ?? process.env.POSTGRES_URL ?? process.env.POSTGRES_PRISMA_URL ?? null
-
-const db = connectionString
-  ? new Pool({
-      connectionString,
-      ssl: false,
-    })
-  : null
+const db = createDbPool()
 
 const DEFAULT_GUIDES: GuideInput[] = [
   {

@@ -1,5 +1,6 @@
 import "server-only"
-import { Pool, type QueryResultRow } from "pg"
+import type { QueryResultRow } from "pg"
+import { connectionString, createDbPool } from "@/lib/db"
 import type {
   WorkerProfile,
   WorkerProfileCreateInput,
@@ -19,15 +20,7 @@ type WorkerRow = QueryResultRow & {
   created_at: Date
 }
 
-const connectionString =
-  process.env.DATABASE_URL ?? process.env.POSTGRES_URL ?? process.env.POSTGRES_PRISMA_URL ?? null
-
-const db = connectionString
-  ? new Pool({
-      connectionString,
-      ssl: false,
-    })
-  : null
+const db = createDbPool()
 
 const DEFAULT_WORKER_ROWS = [
   {

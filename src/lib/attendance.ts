@@ -1,11 +1,12 @@
 import "server-only"
-import { Pool, type QueryResultRow } from "pg"
+import type { QueryResultRow } from "pg"
 import type {
   AttendanceDashboardData,
   AttendanceRecord,
   AttendanceType,
   WorkerAttendanceStatus,
 } from "@/lib/attendanceShared"
+import { connectionString, createDbPool } from "@/lib/db"
 import { getWorkerById, getWorkerName, WORKERS } from "@/lib/workers"
 
 type AttendanceRow = {
@@ -15,15 +16,7 @@ type AttendanceRow = {
   timestamp: Date
 }
 
-const connectionString =
-  process.env.DATABASE_URL ?? process.env.POSTGRES_URL ?? process.env.POSTGRES_PRISMA_URL ?? null
-
-const db = connectionString
-  ? new Pool({
-      connectionString,
-      ssl: false,
-    })
-  : null
+const db = createDbPool()
 
 // Vercel Postgres 또는 로컬 Postgres 연결 여부를 확인하는 헬퍼입니다.
 export function isAttendanceDbConfigured() {

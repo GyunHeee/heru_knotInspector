@@ -1,5 +1,6 @@
 import "server-only"
-import { Pool, type QueryResultRow } from "pg"
+import type { QueryResultRow } from "pg"
+import { connectionString, createDbPool } from "@/lib/db"
 import { getWorkerName } from "@/lib/workers"
 import {
   getReportStatusLabel,
@@ -18,15 +19,7 @@ type ReportRow = QueryResultRow & {
   created_at: Date
 }
 
-const connectionString =
-  process.env.DATABASE_URL ?? process.env.POSTGRES_URL ?? process.env.POSTGRES_PRISMA_URL ?? null
-
-const db = connectionString
-  ? new Pool({
-      connectionString,
-      ssl: false,
-    })
-  : null
+const db = createDbPool()
 
 // 신고 기능의 DB 연결 여부를 확인하는 헬퍼입니다.
 export function isReportsDbConfigured() {

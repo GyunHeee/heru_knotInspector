@@ -1,11 +1,12 @@
 import "server-only"
-import { Pool, type QueryResultRow } from "pg"
+import type { QueryResultRow } from "pg"
 import {
   calculateGoalPercent,
   type DailyGoalHistoryItem,
   type DailyGoalInput,
   type DailyGoalProgress,
 } from "@/lib/dailyGoalsShared"
+import { connectionString, createDbPool } from "@/lib/db"
 import { getWorkerProfiles, isWorkerProfilesDbConfigured } from "@/lib/workerProfiles"
 import { WORKERS, getWorkerName } from "@/lib/workers"
 
@@ -17,15 +18,7 @@ type DailyGoalRow = QueryResultRow & {
   achieved: number
 }
 
-const connectionString =
-  process.env.DATABASE_URL ?? process.env.POSTGRES_URL ?? process.env.POSTGRES_PRISMA_URL ?? null
-
-const db = connectionString
-  ? new Pool({
-      connectionString,
-      ssl: false,
-    })
-  : null
+const db = createDbPool()
 
 // 일일 목표 DB 연결 여부를 확인하는 헬퍼입니다.
 export function isDailyGoalsDbConfigured() {
