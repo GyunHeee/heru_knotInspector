@@ -1,10 +1,8 @@
-import { mkdir, writeFile } from "node:fs/promises"
-import path from "node:path"
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 import { createGuide, isGuidesDbConfigured, updateGuide } from "@/lib/guides"
 import { ADMIN_SESSION_COOKIE, isAdminAuthenticatedFromCookie } from "@/lib/adminAuth"
-import { getGuideSlug, isGuideKnotType, type KnotGuideType } from "@/lib/guidesShared"
+import { isGuideKnotType } from "@/lib/guidesShared"
 
 export const runtime = "nodejs"
 
@@ -13,18 +11,10 @@ function parseStep(value: FormDataEntryValue | null) {
   return parsed
 }
 
-async function saveUploadedImage(file: File, knotType: KnotGuideType, step: number) {
-  const buffer = Buffer.from(await file.arrayBuffer())
-  const extension = file.name.includes(".") ? file.name.split(".").pop() ?? "png" : "png"
-  const safeName = `${getGuideSlug(knotType)}-${Date.now()}-step-${step}.${extension.toLowerCase()}`
-  const relativePath = `/guides/${safeName}`
-  const absoluteDir = path.join(process.cwd(), "public", "guides")
-  const absolutePath = path.join(absoluteDir, safeName)
-
-  await mkdir(absoluteDir, { recursive: true })
-  await writeFile(absolutePath, buffer)
-
-  return relativePath
+async function saveUploadedImage(file: File) {
+  const bytes = Buffer.from(await file.arrayBuffer())
+  const mimeType = file.type || "image/png"
+  return `data:${mimeType};base64,${bytes.toString("base64")}`
 }
 
 // 관리자 가이드 등록과 수정을 처리하는 API 라우트입니다.
@@ -62,7 +52,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const imagePath = await saveUploadedImage(file, knotTypeValue, step)
+    const imagePath = await saveUploadedImage(file)
     const guide = await createGuide({
       knotType: knotTypeValue,
       step,
@@ -77,6 +67,10 @@ export async function POST(request: Request) {
 
     if (error instanceof Error && error.message === "INVALID_DESCRIPTION") {
       return NextResponse.json({ error: "설명은 5자 이상 입력해주세요." }, { status: 400 })
+    }
+
+    if (error instanceof Error && error.message === "DUPLICATE_STEP") {
+      return NextResponse.json({ error: "같은 매듭 종류에 이미 등록된 단계 번호입니다." }, { status: 409 })
     }
 
     return NextResponse.json({ error: "가이드 등록 중 오류가 발생했습니다." }, { status: 500 })
@@ -122,7 +116,7 @@ export async function PUT(request: Request) {
 
   try {
     if (file instanceof File && file.size > 0) {
-      imagePath = await saveUploadedImage(file, knotTypeValue, step)
+      imagePath = await saveUploadedImage(file)
     }
 
     const guide = await updateGuide(guideId, {
@@ -144,6 +138,10 @@ export async function PUT(request: Request) {
 
     if (error instanceof Error && error.message === "INVALID_DESCRIPTION") {
       return NextResponse.json({ error: "설명은 5자 이상 입력해주세요." }, { status: 400 })
+    }
+
+    if (error instanceof Error && error.message === "DUPLICATE_STEP") {
+      return NextResponse.json({ error: "같은 매듭 종류에 이미 등록된 단계 번호입니다." }, { status: 409 })
     }
 
     return NextResponse.json({ error: "가이드 수정 중 오류가 발생했습니다." }, { status: 500 })

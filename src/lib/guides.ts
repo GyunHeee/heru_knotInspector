@@ -67,8 +67,21 @@ function getDb() {
 }
 
 async function queryRows<T extends QueryResultRow>(queryText: string, values: unknown[] = []) {
-  const result = await getDb().query<T>(queryText, values)
-  return result.rows
+  try {
+    const result = await getDb().query<T>(queryText, values)
+    return result.rows
+  } catch (error) {
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      error.code === "23505"
+    ) {
+      throw new Error("DUPLICATE_STEP")
+    }
+
+    throw error
+  }
 }
 
 async function ensureGuidesSchema() {
